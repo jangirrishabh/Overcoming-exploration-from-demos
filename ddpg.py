@@ -349,34 +349,28 @@ class DDPG(object):
         assert len(self._vars("main")) == len(self._vars("target"))
 
         # loss functions
+
+        target_Q_pi_tf = self.target.Q_pi_tf
+        clip_range = (-self.clip_return, 0. if self.clip_pos_returns else np.inf)
+        target_tf = tf.clip_by_value(batch_tf['r'] + self.gamma * target_Q_pi_tf, *clip_range) # y = r + gamma*Q(pi)
+        self.Q_loss_tf = tf.reduce_mean(tf.square(tf.stop_gradient(target_tf) - self.main.Q_tf)) #(y-Q(critic))^2
+
         if self.bc_loss ==1 and self.q_filter == 1 :
-            target_Q_pi_tf = self.target.Q_pi_tf
-            clip_range = (-self.clip_return, 0. if self.clip_pos_returns else np.inf)
-            target_tf = tf.clip_by_value(batch_tf['r'] + self.gamma * target_Q_pi_tf, *clip_range) # y = r + gamma*Q(pi)
-            self.Q_loss_tf = tf.reduce_mean(tf.square(tf.stop_gradient(target_tf) - self.main.Q_tf)) #(y-Q(critic))^2
             maskMain = tf.reshape(tf.boolean_mask(self.main.Q_tf >= self.main.Q_pi_tf, mask), [-1])
             self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask(tf.boolean_mask((self.main.pi_tf / self.max_u), mask), maskMain, axis=0) - tf.boolean_mask(tf.boolean_mask((batch_tf['u']/ self.max_u), mask), maskMain, axis=0)))
             self.pi_loss_tf = -self.lambda1 * tf.reduce_mean(self.main.Q_pi_tf)
-            self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            #self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
             self.pi_loss_tf += self.lambda2 * self.cloning_loss_tf
 
         elif self.bc_loss == 1 and self.q_filter == 0:
-            target_Q_pi_tf = self.target.Q_pi_tf
-            clip_range = (-self.clip_return, 0. if self.clip_pos_returns else np.inf)
-            target_tf = tf.clip_by_value(batch_tf['r'] + self.gamma * target_Q_pi_tf, *clip_range) # y = r + gamma*Q(pi)
-            self.Q_loss_tf = tf.reduce_mean(tf.square(tf.stop_gradient(target_tf) - self.main.Q_tf)) #(y-Q(critic))^2
             self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask((self.main.pi_tf / self.max_u), mask) - tf.boolean_mask((batch_tf['u']/ self.max_u), mask)))
             self.pi_loss_tf = -self.lambda1 * tf.reduce_mean(self.main.Q_pi_tf)
-            self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            #self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
             self.pi_loss_tf += self.lambda2 * self.cloning_loss_tf
 
         else:
-            target_Q_pi_tf = self.target.Q_pi_tf
-            clip_range = (-self.clip_return, 0. if self.clip_pos_returns else np.inf)
-            target_tf = tf.clip_by_value(batch_tf['r'] + self.gamma * target_Q_pi_tf, *clip_range) # y = r + gamma*Q(pi)
-            self.Q_loss_tf = tf.reduce_mean(tf.square(tf.stop_gradient(target_tf) - self.main.Q_tf)) #(y-Q(critic))^2
             self.pi_loss_tf = -tf.reduce_mean(self.main.Q_pi_tf)
-            self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            #self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
 
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
