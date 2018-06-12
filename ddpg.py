@@ -6,10 +6,9 @@ import random
 from tensorflow.contrib.staging import StagingArea
 
 from baselines import logger
-from baselines.her.util import (
-    import_function, store_args, flatten_grads, transitions_in_episode_batch)
-from baselines.her.normalizer import Normalizer
-from baselines.her.replay_buffer import ReplayBuffer
+from util import (import_function, store_args, flatten_grads, transitions_in_episode_batch)
+from normalizer import Normalizer
+from replay_buffer import ReplayBuffer
 from baselines.common.mpi_adam import MpiAdam
 
 
@@ -21,7 +20,7 @@ class DDPG(object):
     @store_args
     def __init__(self, input_dims, buffer_size, hidden, layers, network_class, polyak, batch_size,
                  Q_lr, pi_lr, norm_eps, norm_clip, max_u, action_l2, clip_obs, scope, T,
-                 rollout_batch_size, subtract_goals, relative_goals, clip_pos_returns,  clip_return, demo_buffer, bc_loss, q_filter, num_demo,
+                 rollout_batch_size, subtract_goals, relative_goals, clip_pos_returns,  clip_return, bc_loss, q_filter, num_demo,
                  sample_transitions, gamma, reuse=False, **kwargs):
         """Implementation of DDPG that is used in combination with Hindsight Experience Replay (HER).
 
@@ -67,11 +66,6 @@ class DDPG(object):
         self.demo_batch_size = 32
         self.lambda1 = 0.004
         self.lambda2 =  0.031
-
-        self.demo_buffer = demo_buffer
-        self.bc_loss = bc_loss
-        self.q_filter = q_filter
-        self.num_demo = num_demo
 
         # Prepare staging area for feeding data to the model.
         stage_shapes = OrderedDict()
@@ -154,11 +148,11 @@ class DDPG(object):
             return ret
 
 
-    def initDemoBuffer(self, demoDataFile, rolloutWorker, update_stats=True):
+    def initDemoBuffer(self, demoDataFile, update_stats=True):
 
         demoData = np.load(demoDataFile)
-        info_keys = rolloutWorker.info_keys
-        info_values = [np.empty((self.T, self.rollout_batch_size, rolloutWorker.dims['info_' + key]), np.float32) for key in info_keys]
+        info_keys = [key.replace('info_', '') for key in self.input_dims.keys() if key.startswith('info_')]
+        info_values = [np.empty((self.T, self.rollout_batch_size, self.input_dims['info_' + key]), np.float32) for key in info_keys]
 
         for epsd in range(self.num_demo):
             obs, acts, goals, achieved_goals = [], [] ,[] ,[]
@@ -182,6 +176,7 @@ class DDPG(object):
                 episode['info_{}'.format(key)] = value
 
             episode = convert_episode_to_batch_major(episode)
+            global demoBuffer
             demoBuffer.store_episode(episode)
 
             print("Demo buffer size currently ", demoBuffer.get_current_size())
@@ -252,7 +247,7 @@ class DDPG(object):
         self.pi_adam.update(pi_grad, self.pi_lr)
 
     def sample_batch(self):
-        if self.demo_buffer:
+        if self.bc_loss:
             transitions = self.buffer.sample(self.batch_size - self.demo_batch_size)
             global demoBuffer
 
@@ -370,7 +365,7 @@ class DDPG(object):
 
         else:
             self.pi_loss_tf = -tf.reduce_mean(self.main.Q_pi_tf)
-            #self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
 
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))
@@ -421,7 +416,6 @@ class DDPG(object):
         state = {k: v for k, v in self.__dict__.items() if all([not subname in k for subname in excluded_subnames])}
         state['buffer_size'] = self.buffer_size
         state['tf'] = self.sess.run([x for x in self._global_vars('') if 'buffer' not in x.name])
-        state['demo_buffer'] = self.demo_buffer
         return state
 
     def __setstate__(self, state):
@@ -429,9 +423,7 @@ class DDPG(object):
             # We don't need this for playing the policy.
             state['sample_transitions'] = None
 
-        if 'demo_buffer' not in state:
-            print("NO DEMO BUFFER ")
-            state['demo_buffer'] = 1
+
 
         self.__init__(**state)
         # set up stats (they are overwritten in __init__)

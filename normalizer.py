@@ -4,7 +4,7 @@ import numpy as np
 from mpi4py import MPI
 import tensorflow as tf
 
-from baselines.her.util import reshape_for_broadcasting
+from util import reshape_for_broadcasting
 
 
 class Normalizer:

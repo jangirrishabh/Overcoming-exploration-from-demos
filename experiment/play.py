@@ -1,11 +1,14 @@
 import click
 import numpy as np
 import pickle
+import sys
+
+sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-demos/')
 
 from baselines import logger
 from baselines.common import set_global_seeds
-import baselines.her.experiment.config as config
-from baselines.her.rollout import RolloutWorker
+import config
+from rollout import RolloutWorker
 
 
 @click.command()

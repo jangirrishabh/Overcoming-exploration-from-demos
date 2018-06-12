@@ -6,12 +6,14 @@ import numpy as np
 import json
 from mpi4py import MPI
 
+sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-demos/')
+
 from baselines import logger
 from baselines.common import set_global_seeds
 from baselines.common.mpi_moments import mpi_moments
-import baselines.her.experiment.config as config
-from baselines.her.rollout import RolloutWorker
-from baselines.her.util import mpi_fork
+import config
+from rollout import RolloutWorker
+from util import mpi_fork
 
 from subprocess import CalledProcessError
 
@@ -37,7 +39,7 @@ def train(policy, rollout_worker, evaluator,
     best_success_rate = -1
     demoFileName = 'your/demo/file'
 
-    if policy.demo_buffer == 1: policy.initDemoBuffer(demoFileName, rollout_worker) #initializwe demo buffer
+    if policy.bc_loss == 1: policy.initDemoBuffer(demoFileName) #initializwe demo buffer
     for epoch in range(n_epochs):
         # train
         rollout_worker.clear_history()
@@ -86,7 +88,7 @@ def train(policy, rollout_worker, evaluator,
 
 
 def launch(
-    env, logdir, n_epochs, num_cpu, seed, replay_strategy, policy_save_interval, clip_return, demo_buffer, bc_loss, q_filter, num_demo,
+    env, logdir, n_epochs, num_cpu, seed, replay_strategy, policy_save_interval, clip_return, bc_loss, q_filter, num_demo,
     override_params={}, save_policies=True
 ):
     # Fork for multi-CPU MPI implementation.
@@ -142,12 +144,12 @@ def launch(
         logger.warn()
 
     dims = config.configure_dims(params)
-    policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return, demo_buffer=demo_buffer, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
+    policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
 
     rollout_params = {
         'exploit': False,
         'use_target_net': False,
-        'use_demo_states': True,
+        #'use_demo_states': True,
         'compute_Q': False,
         'T': params['T'],
     }
@@ -155,10 +157,10 @@ def launch(
     eval_params = {
         'exploit': True,
         'use_target_net': params['test_with_polyak'],
-        'use_demo_states': False,
+        #'use_demo_states': False,
         'compute_Q': True,
         'T': params['T'],
-        'render' : False
+        'render' : True
     }
 
     for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
@@ -187,7 +189,6 @@ def launch(
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--demo_buffer', type=int, default=0, help='whether or not the demo buffer should be used')
 @click.option('--bc_loss', type=int, default=0, help='whether or not to use the behavior cloning loss as an auxilliary loss')
 @click.option('--q_filter', type=int, default=0, help='whether or not a Q value filter should be used on the Actor outputs')
 @click.option('--num_demo', type=int, default = 0, help='number of expert demo episodes')

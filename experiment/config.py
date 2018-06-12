@@ -1,9 +1,13 @@
 import numpy as np
 import gym
 
+import sys
+sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-demos/')
+
+
 from baselines import logger
-from baselines.her.ddpg import DDPG
-from baselines.her.her import make_sample_her_transitions
+from ddpg import DDPG
+from her import make_sample_her_transitions
 
 
 DEFAULT_ENV_PARAMS = {
@@ -125,7 +129,7 @@ def simple_goal_subtract(a, b):
     return a - b
 
 
-def configure_ddpg(dims, params, demo_buffer, bc_loss, q_filter, num_demo, reuse=False, use_mpi=True, clip_return=True):
+def configure_ddpg(dims, params, bc_loss, q_filter, num_demo, reuse=False, use_mpi=True, clip_return=True):
     sample_her_transitions = configure_her(params)
     # Extract relevant parameters.
     gamma = params['gamma']
@@ -149,7 +153,7 @@ def configure_ddpg(dims, params, demo_buffer, bc_loss, q_filter, num_demo, reuse
     ddpg_params['info'] = {
         'env_name': params['env_name'],
     }
-    policy = DDPG(reuse=reuse, **ddpg_params, use_mpi=use_mpi , demo_buffer=demo_buffer, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
+    policy = DDPG(reuse=reuse, **ddpg_params, use_mpi=use_mpi, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
     return policy
 
 
