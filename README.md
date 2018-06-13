@@ -21,33 +21,26 @@ The current **master branch** deals with code that aims to use demonstrations in
 
 ## File descriptions and Usage
 
-### experiments/train.py
+### [Training](experiments/train.py)
 Configure the run parameters at the bottom of the file, additional parameters since the her baselines are:
 - '--bc_loss', type=int, default=0, help='whether or not to use the behavior cloning loss as an auxilliary loss'
 - '--q_filter', type=int, default=0, help='whether or not a Q value filter should be used on the Actor outputs'
-- '--num_demo', type=int, default = 0, help='number of expert demo episodes'
+- '--num_demo', type=int, default = 0, help='number of expert demo episodes'.
+
 Edit `demoFileName = 'your/demo/file'` to point to the file that contains your recorded demonstrations
 To start the training use `python experiment/train.py`
 
-### experiments/play.py
+### [Playing](experiments/play.py)
 The above training paradigm spits out policies as .pkl files after every 5 epochs (can be modified) which we can then replay and evaluate with this file. To play the policy execute `python experiments/play.py /path/to/saved/policy.pkl`
 
-### experiments/config.py
+### [Configuration](experiments/config.py)
 All the training hyperparameters can be configured through this file, feel free to experiment with different combinations and record results
 
-### ddpg.py
+### [DDPG agent](ddpg.py)
 Contains the main DDPG algorithm with a modified network where the losses are changed based on the whether demonstrations are provided for the task. Basically we maintain a separate demoBuffer and sample from this as well. Following parameters are to be configured here:
 - self.demo_batch_size : number of demos out of total buffer size (32/256 default)
 - self.lambda1, self.lambda2 : correspond to the weights given for Q loss and Behavior cloning loss respectively
 
-## Hindsight Experience Replay
-In the case of a sparse reward setting, which is usally easier to use when explaining a complex robotics task, there are not many rollouts with positive rewards. Now even in these failed rollouts where no reward was obtained, the agent can transform them into successful ones by assuming that a state it saw in the rollout was the actual goal. Usually HER is used with any off-policy RL algorithm assuming that for every state we can find a goal corresponding to this state. 
-
-> Think of trying to shoot a football into a goal, in the unsuccessful tries you hit the ball left to the pole and it does not get inside the goal. But now assume that the goal was originally a little left to where it now is, such that this trial would have been successful in that imaginary case! Now this imaginary case does not help you to learn how to hit the ball exactly in the goal, but you do learn how to hit the ball in a case where the goal was a little to the left, all this was possible because we shifted the goal (to an observed state in the rollout) and gave a reward for it.
-
-HER is a good technique that helps the agent to learn from sparse rewards, but trying to solve robotics tasks with such sparse rewards can be very slow and the agent might not ever reach to some states that are important because of the exploration problem. Think of the case of grasping a block with a robotic arm, the probability of taking the grasp action exactly when the arm position is perfectly above the block in a particular orientation is very low. Thus an improvement to HER would be if we could use expert demonstrations provided to the agent in a way to overcome the exploration problem.
-
-Further in this blog you will read about my implementation of the paper **"Overcoming Exploration in Reinforcement Learning with Demonstrations" Nair et al.** which introduces ways to use demonstartions along with HER in a sparse reward case to overcome the exploration problems and solve some complex robotics tasks!
 
 Major contributions of the paper include the following aspects which I have tried to implement over the HER baselines:
 
@@ -123,6 +116,9 @@ Here, we first mask the samples such as to get the cloning loss only on the demo
 ## Experimentation
 The work is in progress and most of the experimentation is being carried out on a Barret WAM simulator, that is because I have access to a Barret WAM robot through the Perception and Manipulation Lab, IRI. I have frameworks for generating demonstartions using the Inverse Kinematics and Forward Kinematics nodes developed at IRI. Also, in [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation and then transfer it to the real robot, exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. 
 
+<p align="center">
+  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png"/>
+</p>
 
 ## Tasks
 The types of tasks I am considering for now are - 
