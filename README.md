@@ -6,9 +6,6 @@ Implementation of the paper "Overcoming Exploration in Reinforcement Learning wi
 
 To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html
 
-<p align="center">
-  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png"/>
-</p>
 
 ## Installation 
 - Install Python 3.5 or higher
@@ -22,6 +19,10 @@ To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/
 
 ## Branches
 The current **master branch** deals with code that aims to use demonstrations in Fetch Environment tasks, though currently I lack a framework to generate demonstrations in Fetch environments, work towards using HTC Vibe for generating demonstration data in VR is in progress. The **barretWAM** branch is more advanced as I have frameworks for generating demonstartions using the Inverse Kinematics and Forward Kinematics nodes developed at IRI. Also, in [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities.
+
+<p align="center">
+  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png"/>
+</p>
 
 ## File descriptions and Usage
 
