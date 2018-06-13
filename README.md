@@ -55,6 +55,7 @@ Major contributions of the paper include the following aspects which I have trie
 First, we maintain a second replay buffer R<sub>D</sub> where we store our demonstration data in the same format as R. In each minibatch, we draw an extra N<sub>D</sub> examples from R<sub>D</sub> to use as off-policy replay data  for the update step. These examples are included in both the actor and critic update.
 
 ```python
+
 self.demo_batch_size = 32 #Number of demo samples
 
 def initDemoBuffer(self, demoDataFile, update_stats=True): 
@@ -79,23 +80,7 @@ def sample_batch(self):
 
 
 ## Behavior Cloning Loss applied on the actor's actions
-Second, we introduce a new loss computed only on the demonstration examples for training the actor-
-
-$$
-\begin{align}
-L_{BC} &= \sum_{i=1}^{N_D} ||\pi(s_i|\theta_{\pi}) - a_i||^{2}
-\end{align}
-$$
-
-This loss is a standard loss in imitation learning, but we show that using it as an  auxiliary loss for RL improves learning significantly. The gradient applied to the actor parameters is:
-
-$$
-\begin{align}
-\lambda_1 \nabla_{\theta_{\pi}} J - \lambda_2 \nabla_{\theta_{\pi}} L_{BC}
-\end{align}
-$$
-
-(Note  that  we  maximize J and  minimize L<sub>BC</sub>. Using this loss directly prevents the learned policy from improving significantly beyond the demonstration policy, as the actor is always tied back to the demonstrations. 
+Second, we introduce a new loss computed only on the demonstration examples for training the actor. This loss is a standard loss in imitation learning, but we show that using it as an  auxiliary loss for RL improves learning significantly. The gradient applied to the actor parameters is. (Note  that  we  maximize J and  minimize L<sub>BC</sub>. Using this loss directly prevents the learned policy from improving significantly beyond the demonstration policy, as the actor is always tied back to the demonstrations. 
 
 > Please read the paper to go through the meaning of the symbols used in these equations
 
@@ -103,6 +88,7 @@ $$
 We account for the possibility that demonstrations can be suboptimal by applying the behavior cloning loss only to states  where  the  critic Q(s,a)  determines  that  the  demonstrator action is better than the actor action. In python this looks like:
 
 ```python
+
 self.lambda1 = 0.004
 self.lambda2 =  0.031
 
@@ -137,10 +123,6 @@ Here, we first mask the samples such as to get the cloning loss only on the demo
 ## Experimentation
 The work is in progress and most of the experimentation is being carried out on a Barret WAM simulator, that is because I have access to a Barret WAM robot through the Perception and Manipulation Lab, IRI. I have frameworks for generating demonstartions using the Inverse Kinematics and Forward Kinematics nodes developed at IRI. Also, in [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation and then transfer it to the real robot, exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. 
 
-<div class="imgcap">
-<center><img src="/assets/research/wam_single_block_reach.png" width="100%"></center>
-<div class="thecap" align="middle">The Barret WAM robotic arm simulation in Gazebo.</div>
-</div>
 
 ## Tasks
 The types of tasks I am considering for now are - 
@@ -154,30 +136,14 @@ The types of tasks I am considering for now are -
 ## Generating demonstrations
 Currently using a simple python script to generate demonstrations with the help of Inverse IK and Forward IK functionalities already in place for the robot I am using. Thus not all the generated demonstrations are perfect, which is good as our algorithm uses a Q-filter which accounts for all the bad demonstration data. The video below shows the demonstration generating paradigm for a 2 block stacking case, where one of the blocks is already at its goal position and the task involves stacking the second block on top of this block, the goal positions are shown in red in the rviz window next to gazebo (it is way easier to have markers in rviz than gazebo). When the block reaches its goal position the marker turns green.
 
-
-
-<div class="imgcap">
-<div align="middle">
-<iframe width="600" height="350" src="https://www.youtube.com/embed/XHtDISfgXoY? rel=0&amp;controls=1&amp;autoplay=0&amp;loop=1&amp;rel=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-</div>
-<div class="thecap" align="middle"><b>Generating demonstartions for a two block stacking task, note that the demonstrations are not perfect.</b> </div>
-</div>
-
-
+> Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos.
 
 ## Training details and Hyperparameters
 We train the robot with the above shown demonstrations in the buffer. We sample a total of 100 demonstrations/rollouts and in every minibatch sample N<sub>D</sub> = 32 samples from the demonstrations in a total of N = 256 samples, the rest of the samples are generated when the arm interacts with the environment. To train the model we use Adam optimizer with learning rate 0.001 for both critic and actor networks. The discount factor is 0.98. To explore during training, we sample random actions uniformly within the action space with a probability of 0.2 at every step, with an additional uniform gaussian noise which is 5% of the maximum value of each action dimension. For details about more hyperparameters, refer to config.py in the source code. 
 
 
 ## Resulting Behaviors
-The following video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other. As you can see it learns to pick up the block, reach to a perfect position to drop the block but still does not learn to take the action that results in dropping the block to the goal. As I said this is a work in progress and I am still working towards improving the performace of the agent in this task. For the other easier tasks of reaching a goal position and picking up the block it shows perfect performance, and I have not reported those results as they are just a subset of the current problem which I am trying to solve.
-
-<div class="imgcap">
-<div align="middle">
-<iframe width="600" height="350" src="https://www.youtube.com/embed/XHtDISfgXoY? rel=0&amp;controls=1&amp;autoplay=0&amp;loop=1&amp;rel=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-</div>
-<div class="thecap" align="middle"><b>Generating demonstartions for a two block stacking task, note that the demonstrations are not perfect.</b> </div>
-</div>
+Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other. It learns to pick up the block, reach to a perfect position to drop the block but still does not learn to take the action that results in dropping the block to the goal. As I said this is a work in progress and I am still working towards improving the performace of the agent in this task. For the other easier tasks of reaching a goal position and picking up the block it shows perfect performance, and I have not reported those results as they are just a subset of the current problem which I am trying to solve.
 
 <!-- ###her.py
 
