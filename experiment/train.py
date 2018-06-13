@@ -224,9 +224,9 @@ def launch(
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--bc_loss', type=int, default=0, help='whether or not to use the behavior cloning loss as an auxilliary loss')
-@click.option('--q_filter', type=int, default=0, help='whether or not a Q value filter should be used on the Actor outputs')
-@click.option('--num_demo', type=int, default = 0, help='number of expert demo episodes')
+@click.option('--bc_loss', type=int, default=1, help='whether or not to use the behavior cloning loss as an auxilliary loss')
+@click.option('--q_filter', type=int, default=1, help='whether or not a Q value filter should be used on the Actor outputs')
+@click.option('--num_demo', type=int, default = 95, help='number of expert demo episodes')
 def main(**kwargs):
     launch(**kwargs)
 
