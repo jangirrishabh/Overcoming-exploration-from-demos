@@ -182,7 +182,7 @@ class DDPG(object):
             print("Demo buffer size currently ", demoBuffer.get_current_size())
 
             if update_stats:
-                # add transitions to normalizer
+                # add transitions to normalizer to normalize the demo data as well
                 episode['o_2'] = episode['o'][:, 1:, :]
                 episode['ag_2'] = episode['ag'][:, 1:, :]
                 num_normalizing_transitions = transitions_in_episode_batch(episode)
