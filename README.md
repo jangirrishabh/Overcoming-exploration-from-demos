@@ -6,6 +6,10 @@ Implementation of the paper "Overcoming Exploration in Reinforcement Learning wi
 
 To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html
 
+<p align="center">
+  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png"/>
+</p>
+
 ## Installation 
 - Install Python 3.5 or higher
 
@@ -116,9 +120,7 @@ Here, we first mask the samples such as to get the cloning loss only on the demo
 ## Experimentation
 The work is in progress and most of the experimentation is being carried out on a Barret WAM simulator, that is because I have access to a Barret WAM robot through the Perception and Manipulation Lab, IRI. I have frameworks for generating demonstartions using the Inverse Kinematics and Forward Kinematics nodes developed at IRI. Also, in [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation and then transfer it to the real robot, exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. 
 
-<p align="center">
-  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png"/>
-</p>
+
 
 ## Tasks
 The types of tasks I am considering for now are - 
