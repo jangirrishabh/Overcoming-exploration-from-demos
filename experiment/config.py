@@ -1,5 +1,6 @@
 import numpy as np
 import gym
+import gym_gazebo
 
 import sys
 sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-demos/')
@@ -13,6 +14,9 @@ from her import make_sample_her_transitions
 DEFAULT_ENV_PARAMS = {
     'FetchReach-v1': {
         'n_cycles': 10,
+    },
+    'GazeboWAMemptyEnv-v2': {
+        'n_cycles': 20,
     },
 }
 
@@ -34,14 +38,14 @@ DEFAULT_PARAMS = {
     'relative_goals': False,
     # training
     'n_cycles': 50,  # per epoch
-    'rollout_batch_size': 2,  # per mpi thread
+    'rollout_batch_size': 1,  # per mpi thread
     'n_batches': 40,  # training batches per cycle
     'batch_size': 256,  # per mpi thread, measured in transitions and reduced to even multiple of chunk_length.
     'n_test_rollouts': 10,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
     'test_with_polyak': False,  # run test episodes with the target network
     # exploration
-    'random_eps': 0.3,  # percentage of time a random action is taken
-    'noise_eps': 0.2,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+    'random_eps': 0.2,  # percentage of time a random action is taken
+    'noise_eps': 0.05,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     # HER
     'replay_strategy': 'future',  # supported modes: future, none
     'replay_k': 4,  # number of additional goals used for replay, only used if off_policy_data=future
@@ -109,7 +113,8 @@ def configure_her(params):
     env.reset()
 
     def reward_fun(ag_2, g, info):  # vectorized
-        return env.compute_reward(achieved_goal=ag_2, desired_goal=g, info=info)
+        #return env.compute_reward(achieved_goal=ag_2, desired_goal=g, info=info)
+        return env.compute_reward_HER(achieved_goal=ag_2, desired_goal=g, info=info)
 
     # Prepare configuration for HER.
     her_params = {

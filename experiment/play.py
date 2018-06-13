@@ -8,7 +8,7 @@ sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-de
 from baselines import logger
 from baselines.common import set_global_seeds
 import config
-from rollout import RolloutWorker
+from baselines.her.rollout import RolloutWorker, RolloutWorkerOriginal
 
 
 @click.command()
@@ -34,19 +34,35 @@ def main(policy_file, seed, n_test_rollouts, render):
 
     dims = config.configure_dims(params)
 
-    eval_params = {
-        'exploit': True,
-        'use_target_net': params['test_with_polyak'],
-        'compute_Q': True,
-        'rollout_batch_size': 1,
-        'render': bool(render),
-    }
+    if params['env_name'] == 'GazeboWAMemptyEnv-v2':
+        eval_params = {
+            'exploit': True,
+            'use_target_net': params['test_with_polyak'],
+            'compute_Q': True,
+            'rollout_batch_size': 1,
+            #'render': bool(render),
+        }
 
-    for name in ['T', 'gamma', 'noise_eps', 'random_eps']:
-        eval_params[name] = params[name]
-    
-    evaluator = RolloutWorker(params['make_env'], policy, dims, logger, **eval_params)
-    evaluator.seed(seed)
+        for name in ['T', 'gamma', 'noise_eps', 'random_eps']:
+            eval_params[name] = params[name]
+
+        madeEnv = config.cached_make_env(params['make_env'])
+        evaluator = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **eval_params)
+        evaluator.seed(seed)
+    else:
+        eval_params = {
+            'exploit': True,
+            'use_target_net': params['test_with_polyak'],
+            'compute_Q': True,
+            'rollout_batch_size': 1,
+            'render': bool(render),
+        }
+
+        for name in ['T', 'gamma', 'noise_eps', 'random_eps']:
+            eval_params[name] = params[name]
+
+        evaluator = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **eval_params)
+        evaluator.seed(seed)
 
     # Run evaluation.
     evaluator.clear_history()

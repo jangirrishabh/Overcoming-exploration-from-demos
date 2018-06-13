@@ -12,7 +12,7 @@ from baselines import logger
 from baselines.common import set_global_seeds
 from baselines.common.mpi_moments import mpi_moments
 import config
-from rollout import RolloutWorker
+from baselines.her.rollout import RolloutWorker, RolloutWorkerOriginal
 from util import mpi_fork
 
 from subprocess import CalledProcessError
@@ -37,7 +37,7 @@ def train(policy, rollout_worker, evaluator,
 
     logger.info("Training...")
     best_success_rate = -1
-    demoFileName = 'your/demo/file'
+    demoFileName = '/home/rjangir/wamObjectDemoData/data_wam_double_random_100_50.npz'
 
     if policy.bc_loss == 1: policy.initDemoBuffer(demoFileName) #initializwe demo buffer
     for epoch in range(n_epochs):
@@ -146,32 +146,67 @@ def launch(
     dims = config.configure_dims(params)
     policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
 
-    rollout_params = {
-        'exploit': False,
-        'use_target_net': False,
-        #'use_demo_states': True,
-        'compute_Q': False,
-        'T': params['T'],
-    }
+    if params['env_name'] == 'GazeboWAMemptyEnv-v2':
+        rollout_params = {
+            'exploit': False,
+            'use_target_net': False,
+            'use_demo_states': True,
+            'compute_Q': False,
+            'T': params['T'],
+            #'render': 1,
+        }
 
-    eval_params = {
-        'exploit': True,
-        'use_target_net': params['test_with_polyak'],
-        #'use_demo_states': False,
-        'compute_Q': True,
-        'T': params['T'],
-        'render' : True
-    }
+        eval_params = {
+            'exploit': True,
+            'use_target_net': params['test_with_polyak'],
+            'use_demo_states': False,
+            'compute_Q': True,
+            'T': params['T'],
+            'rollout_batch_size': 1,
+            #'render': 1,
+        }
 
-    for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
-        rollout_params[name] = params[name]
-        eval_params[name] = params[name]
+        for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
+            rollout_params[name] = params[name]
+            eval_params[name] = params[name]
 
-    rollout_worker = RolloutWorker(params['make_env'], policy, dims, logger, **rollout_params)
-    rollout_worker.seed(rank_seed)
 
-    evaluator = RolloutWorker(params['make_env'], policy, dims, logger, **eval_params)
-    evaluator.seed(rank_seed)
+
+        madeEnv = config.cached_make_env(params['make_env'])
+        rollout_worker = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **rollout_params)
+        rollout_worker.seed(rank_seed)
+
+        evaluator = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **eval_params)
+        evaluator.seed(rank_seed)
+    else:
+        rollout_params = {
+            'exploit': False,
+            'use_target_net': False,
+            'use_demo_states': True,
+            'compute_Q': False,
+            'T': params['T'],
+            #'render': 1,
+        }
+
+        eval_params = {
+            'exploit': True,
+            'use_target_net': params['test_with_polyak'],
+            'use_demo_states': False,
+            'compute_Q': True,
+            'T': params['T'],
+            'render': 1,
+        }
+
+        for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
+            rollout_params[name] = params[name]
+            eval_params[name] = params[name]
+
+
+        rollout_worker = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **rollout_params)
+        rollout_worker.seed(rank_seed)
+
+        evaluator = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **eval_params)
+        evaluator.seed(rank_seed)
 
     train(
         logdir=logdir, policy=policy, rollout_worker=rollout_worker,

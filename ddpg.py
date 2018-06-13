@@ -10,10 +10,13 @@ from util import (import_function, store_args, flatten_grads, transitions_in_epi
 from normalizer import Normalizer
 from replay_buffer import ReplayBuffer
 from baselines.common.mpi_adam import MpiAdam
-
+from baselines.her.util import convert_episode_to_batch_major, store_args
 
 def dims_to_shapes(input_dims):
     return {key: tuple([val]) if val > 0 else tuple() for key, val in input_dims.items()}
+
+
+global demoBuffer
 
 
 class DDPG(object):
