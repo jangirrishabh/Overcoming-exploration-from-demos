@@ -6,7 +6,10 @@ Implementation of the paper "Overcoming Exploration in Reinforcement Learning wi
 
 To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> b5fd64b2f9167ae0004a35eee4263aed357d4a49
 
 ## Installation 
 - Install Python 3.5 or higher

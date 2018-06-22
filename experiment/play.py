@@ -14,7 +14,7 @@ from baselines.her.rollout import RolloutWorker, RolloutWorkerOriginal
 @click.command()
 @click.argument('policy_file', type=str)
 @click.option('--seed', type=int, default=0)
-@click.option('--n_test_rollouts', type=int, default=10)
+@click.option('--n_test_rollouts', type=int, default=1000)
 @click.option('--render', type=int, default=1)
 def main(policy_file, seed, n_test_rollouts, render):
     set_global_seeds(seed)
