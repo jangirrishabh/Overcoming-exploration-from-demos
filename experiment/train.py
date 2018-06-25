@@ -236,7 +236,7 @@ def launch(
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
 @click.option('--bc_loss', type=int, default=1, help='whether or not to use the behavior cloning loss as an auxilliary loss')
 @click.option('--q_filter', type=int, default=1, help='whether or not a Q value filter should be used on the Actor outputs')
-@click.option('--num_demo', type=int, default = 99, help='number of expert demo episodes')
+@click.option('--num_demo', type=int, default = 30, help='number of expert demo episodes')
 def main(**kwargs):
     launch(**kwargs)
 
