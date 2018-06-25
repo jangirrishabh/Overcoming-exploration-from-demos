@@ -10,10 +10,13 @@ from util import (import_function, store_args, flatten_grads, transitions_in_epi
 from normalizer import Normalizer
 from replay_buffer import ReplayBuffer
 from baselines.common.mpi_adam import MpiAdam
-
+from baselines.her.util import convert_episode_to_batch_major, store_args
 
 def dims_to_shapes(input_dims):
     return {key: tuple([val]) if val > 0 else tuple() for key, val in input_dims.items()}
+
+
+global demoBuffer
 
 
 class DDPG(object):
@@ -62,10 +65,9 @@ class DDPG(object):
         self.dimu = self.input_dims['u']
 
 
-
-        self.demo_batch_size = 32
+        self.demo_batch_size = 64
         self.lambda1 = 0.004
-        self.lambda2 =  0.031
+        self.lambda2 =  0.016
 
         # Prepare staging area for feeding data to the model.
         stage_shapes = OrderedDict()
@@ -234,30 +236,32 @@ class DDPG(object):
 
     def _grads(self):
         # Avoid feed_dict here for performance!
-        critic_loss, actor_loss, Q_grad, pi_grad = self.sess.run([
+        critic_loss, actor_loss, q_pi_tf, cloning_loss, Q_grad, pi_grad = self.sess.run([
             self.Q_loss_tf,
+            self.pi_loss_tf,
             self.main.Q_pi_tf,
+            self.cloning_loss_tf,
             self.Q_grad_tf,
             self.pi_grad_tf
         ])
-        return critic_loss, actor_loss, Q_grad, pi_grad
+        return critic_loss, actor_loss, q_pi_tf, cloning_loss, Q_grad, pi_grad
 
     def _update(self, Q_grad, pi_grad):
         self.Q_adam.update(Q_grad, self.Q_lr)
         self.pi_adam.update(pi_grad, self.pi_lr)
 
     def sample_batch(self):
+
         if self.bc_loss:
             transitions = self.buffer.sample(self.batch_size - self.demo_batch_size)
             global demoBuffer
 
             transitionsDemo = demoBuffer.sample(self.demo_batch_size)
-
             for k, values in transitionsDemo.items():
+                rolloutV = transitions[k].tolist()
                 for v in values:
-                    rolloutV = transitions[k].tolist()
                     rolloutV.append(v.tolist())
-                    transitions[k] = np.array(rolloutV)
+                transitions[k] = np.array(rolloutV)
         else:
             transitions = self.buffer.sample(self.batch_size)
 
@@ -280,9 +284,9 @@ class DDPG(object):
     def train(self, stage=True):
         if stage:
             self.stage_batch()
-        critic_loss, actor_loss, Q_grad, pi_grad = self._grads()
+        critic_loss, actor_loss, q_pi_tf, cloning_loss, Q_grad, pi_grad = self._grads()
         self._update(Q_grad, pi_grad)
-        return critic_loss, actor_loss
+        return critic_loss, actor_loss, cloning_loss
 
     def _init_target_net(self):
         self.sess.run(self.init_target_net_op)
@@ -351,21 +355,23 @@ class DDPG(object):
         self.Q_loss_tf = tf.reduce_mean(tf.square(tf.stop_gradient(target_tf) - self.main.Q_tf)) #(y-Q(critic))^2
 
         if self.bc_loss ==1 and self.q_filter == 1 :
-            maskMain = tf.reshape(tf.boolean_mask(self.main.Q_tf >= self.main.Q_pi_tf, mask), [-1])
-            self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask(tf.boolean_mask((self.main.pi_tf / self.max_u), mask), maskMain, axis=0) - tf.boolean_mask(tf.boolean_mask((batch_tf['u']/ self.max_u), mask), maskMain, axis=0)))
+            maskMain = tf.reshape(tf.boolean_mask(self.main.Q_tf > self.main.Q_pi_tf, mask), [-1]) #where is the demonstrator action better than actor action according to the critic?
+            self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask(tf.boolean_mask((self.main.pi_tf), mask), maskMain, axis=0) - tf.boolean_mask(tf.boolean_mask((batch_tf['u']), mask), maskMain, axis=0)))
             self.pi_loss_tf = -self.lambda1 * tf.reduce_mean(self.main.Q_pi_tf)
-            #self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
             self.pi_loss_tf += self.lambda2 * self.cloning_loss_tf
 
         elif self.bc_loss == 1 and self.q_filter == 0:
-            self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask((self.main.pi_tf / self.max_u), mask) - tf.boolean_mask((batch_tf['u']/ self.max_u), mask)))
+            self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask((self.main.pi_tf), mask) - tf.boolean_mask((batch_tf['u']), mask)))
             self.pi_loss_tf = -self.lambda1 * tf.reduce_mean(self.main.Q_pi_tf)
-            #self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
             self.pi_loss_tf += self.lambda2 * self.cloning_loss_tf
 
         else:
             self.pi_loss_tf = -tf.reduce_mean(self.main.Q_pi_tf)
             self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
+            self.cloning_loss_tf = self.cloning_loss_tf = tf.reduce_sum(tf.square(self.main.pi_tf - batch_tf['u'])) #random
+            
 
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))
         pi_grads_tf = tf.gradients(self.pi_loss_tf, self._vars('main/pi'))

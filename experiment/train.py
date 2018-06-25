@@ -12,7 +12,7 @@ from baselines import logger
 from baselines.common import set_global_seeds
 from baselines.common.mpi_moments import mpi_moments
 import config
-from rollout import RolloutWorker
+from baselines.her.rollout import RolloutWorker, RolloutWorkerOriginal
 from util import mpi_fork
 
 from subprocess import CalledProcessError
@@ -37,17 +37,21 @@ def train(policy, rollout_worker, evaluator,
 
     logger.info("Training...")
     best_success_rate = -1
-    demoFileName = 'your/demo/file'
+    demoFileName = '/home/rjangir/wamObjectDemoData/data_wam_double_random_100_50.npz'
 
     if policy.bc_loss == 1: policy.initDemoBuffer(demoFileName) #initializwe demo buffer
     for epoch in range(n_epochs):
         # train
+        criticLoss, actorLoss, cloningLoss = 0, 0, 0
         rollout_worker.clear_history()
         for _ in range(n_cycles):
             episode = rollout_worker.generate_rollouts()
             policy.store_episode(episode)
             for _ in range(n_batches):
-                policy.train()
+                a, b, c = policy.train()
+                criticLoss += a
+                actorLoss += b
+                cloningLoss += c 
             policy.update_target_net()
 
         # test
@@ -57,12 +61,17 @@ def train(policy, rollout_worker, evaluator,
 
         # record logs
         logger.record_tabular('epoch', epoch)
+        
+
         for key, val in evaluator.logs('test'):
             logger.record_tabular(key, mpi_average(val))
         for key, val in rollout_worker.logs('train'):
             logger.record_tabular(key, mpi_average(val))
         for key, val in policy.logs():
             logger.record_tabular(key, mpi_average(val))
+        logger.record_tabular('criticLoss', criticLoss/policy.T)
+        logger.record_tabular('actorLoss', actorLoss/policy.T)
+        logger.record_tabular('cloningLoss', cloningLoss/policy.T)
 
         if rank == 0:
             logger.dump_tabular()
@@ -85,6 +94,7 @@ def train(policy, rollout_worker, evaluator,
         MPI.COMM_WORLD.Bcast(root_uniform, root=0)
         if rank != 0:
             assert local_uniform[0] != root_uniform[0]
+        
 
 
 def launch(
@@ -146,32 +156,67 @@ def launch(
     dims = config.configure_dims(params)
     policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
 
-    rollout_params = {
-        'exploit': False,
-        'use_target_net': False,
-        #'use_demo_states': True,
-        'compute_Q': False,
-        'T': params['T'],
-    }
+    if params['env_name'] == 'GazeboWAMemptyEnv-v2':
+        rollout_params = {
+            'exploit': False,
+            'use_target_net': False,
+            'use_demo_states': True,
+            'compute_Q': False,
+            'T': params['T'],
+            #'render': 1,
+        }
 
-    eval_params = {
-        'exploit': True,
-        'use_target_net': params['test_with_polyak'],
-        #'use_demo_states': False,
-        'compute_Q': True,
-        'T': params['T'],
-        'render' : True
-    }
+        eval_params = {
+            'exploit': True,
+            'use_target_net': params['test_with_polyak'],
+            #'use_demo_states': False,
+            'compute_Q': True,
+            'T': params['T'],
+            'rollout_batch_size': 1,
+            #'render': 1,
+        }
 
-    for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
-        rollout_params[name] = params[name]
-        eval_params[name] = params[name]
+        for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
+            rollout_params[name] = params[name]
+            eval_params[name] = params[name]
 
-    rollout_worker = RolloutWorker(params['make_env'], policy, dims, logger, **rollout_params)
-    rollout_worker.seed(rank_seed)
 
-    evaluator = RolloutWorker(params['make_env'], policy, dims, logger, **eval_params)
-    evaluator.seed(rank_seed)
+
+        madeEnv = config.cached_make_env(params['make_env'])
+        rollout_worker = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **rollout_params)
+        rollout_worker.seed(rank_seed)
+
+        evaluator = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **eval_params)
+        evaluator.seed(rank_seed)
+    else:
+        rollout_params = {
+            'exploit': False,
+            'use_target_net': False,
+            'use_demo_states': True,
+            'compute_Q': False,
+            'T': params['T'],
+            #'render': 1,
+        }
+
+        eval_params = {
+            'exploit': True,
+            'use_target_net': params['test_with_polyak'],
+            #'use_demo_states': False,
+            'compute_Q': True,
+            'T': params['T'],
+            'render': 1,
+        }
+
+        for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
+            rollout_params[name] = params[name]
+            eval_params[name] = params[name]
+
+
+        rollout_worker = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **rollout_params)
+        rollout_worker.seed(rank_seed)
+
+        evaluator = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **eval_params)
+        evaluator.seed(rank_seed)
 
     train(
         logdir=logdir, policy=policy, rollout_worker=rollout_worker,
@@ -183,15 +228,15 @@ def launch(
 @click.command()
 @click.option('--env', type=str, default='FetchReach-v0', help='the name of the OpenAI Gym environment that you want to train on')
 @click.option('--logdir', type=str, default=None, help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
-@click.option('--n_epochs', type=int, default=50, help='the number of training epochs to run')
+@click.option('--n_epochs', type=int, default=200, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
 @click.option('--seed', type=int, default=0, help='the random seed used to seed both the environment and the training code')
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--bc_loss', type=int, default=0, help='whether or not to use the behavior cloning loss as an auxilliary loss')
-@click.option('--q_filter', type=int, default=0, help='whether or not a Q value filter should be used on the Actor outputs')
-@click.option('--num_demo', type=int, default = 0, help='number of expert demo episodes')
+@click.option('--bc_loss', type=int, default=1, help='whether or not to use the behavior cloning loss as an auxilliary loss')
+@click.option('--q_filter', type=int, default=1, help='whether or not a Q value filter should be used on the Actor outputs')
+@click.option('--num_demo', type=int, default = 30, help='number of expert demo episodes')
 def main(**kwargs):
     launch(**kwargs)
 
