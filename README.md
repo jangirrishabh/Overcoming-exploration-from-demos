@@ -21,11 +21,11 @@ To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/
 I'm solving different tasks in two different environments, Fetch robotic environments from OpenAI gym, and Barret WAM simulation in Gazebo integrated with gym. The learning algorithm is agnostic of the simulation environment used. With the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo) the simulation environment in gazebo can be used as a stanalone gym environment with all the gym functionalities.
  
 
-<p align="left">
+<p align="left" width="80%">
   <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png"/>
 </p>
 
-<p align="right">
+<p align="right" width="60%">
   <img src="assets/fetchEnv.png"/>
 </p>
 
