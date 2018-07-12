@@ -22,7 +22,7 @@ I'm solving different tasks in two different environments, Fetch robotic environ
  
 
 <p align="left" ">
-  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png" width="60%" />
+  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png" width="30%" />
 </p>
 
 
