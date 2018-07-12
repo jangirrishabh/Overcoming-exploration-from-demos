@@ -65,9 +65,11 @@ class DDPG(object):
         self.dimu = self.input_dims['u']
 
 
-        self.demo_batch_size = 64
-        self.lambda1 = 0.004
-        self.lambda2 =  0.016
+        self.demo_batch_size = 128
+        self.lambda1 = 0.001
+        self.lambda2 =  0.0078
+
+        self.l2_reg_coeff = 0.005
 
         # Prepare staging area for feeding data to the model.
         stage_shapes = OrderedDict()
@@ -370,7 +372,18 @@ class DDPG(object):
         else:
             self.pi_loss_tf = -tf.reduce_mean(self.main.Q_pi_tf)
             self.pi_loss_tf += self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
-            self.cloning_loss_tf = self.cloning_loss_tf = tf.reduce_sum(tf.square(self.main.pi_tf - batch_tf['u'])) #random
+            self.cloning_loss_tf = tf.reduce_sum(tf.square(self.main.pi_tf - batch_tf['u'])) #random
+
+
+        # varTempCritic = [v for v in tf.trainable_variables() if v.name == "main/Q"]
+        # #regularizerCritic = tf.nn.l2_loss(self._vars('main/Q'))
+        # regularizerCritic = tf.nn.l2_loss(varTempCritic)
+        # self.Q_loss_tf = tf.reduce_mean(self.Q_loss_tf + self.l2_reg_coeff*regularizerCritic)
+
+        # varTempActor = [v for v in tf.trainable_variables() if v.name == "main/pi"]
+
+        # regularizerActor = tf.nn.l2_loss(varTempActor)
+        # self.pi_loss_tf = tf.reduce_mean(self.pi_loss_tf + self.l2_reg_coeff*regularizerActor)
             
 
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))

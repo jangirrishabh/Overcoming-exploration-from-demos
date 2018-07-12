@@ -31,16 +31,16 @@ DEFAULT_PARAMS = {
     'Q_lr': 0.001,  # critic learning rate
     'pi_lr': 0.001,  # actor learning rate
     'buffer_size': int(1E6),  # for experience replay
-    'polyak': 0.95,  # polyak averaging coefficient
+    'polyak': 0.8,  # polyak averaging coefficient
     'action_l2': 1.0,  # quadratic penalty on actions (before rescaling by max_u)
     'clip_obs': 200.,
     'scope': 'ddpg',  # can be tweaked for testing
     'relative_goals': False,
     # training
-    'n_cycles': 50,  # per epoch
+    'n_cycles': 20,  # per epoch
     'rollout_batch_size': 1,  # per mpi thread
     'n_batches': 40,  # training batches per cycle
-    'batch_size': 256,  # per mpi thread, measured in transitions and reduced to even multiple of chunk_length.
+    'batch_size': 1024,  # per mpi thread, measured in transitions and reduced to even multiple of chunk_length.
     'n_test_rollouts': 10,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
     'test_with_polyak': False,  # run test episodes with the target network
     # exploration
