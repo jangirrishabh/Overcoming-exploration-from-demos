@@ -166,7 +166,7 @@ Training with demonstrations helps overcome the exploration problem and achieves
 
 
 <div class="imgcap">
-<center><img src="assets/pickPlaceFetch.png"></center>
+<center><img src="assets/PickPlaceFetch.png"></center>
 <div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations.</b></div>
 </div>
 
@@ -174,6 +174,7 @@ Training with demonstrations helps overcome the exploration problem and achieves
 <center><img src="assets/pickandplaceDemo.png"></center>
 <div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations.</b></div>
 </div>
+
 
 Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other and other tasks as well.
 
