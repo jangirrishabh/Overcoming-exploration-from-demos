@@ -134,7 +134,7 @@ The work is in progress and most of the experimentation is being carried out on 
 
 
 ## Tasks
-The types of tasks I am considering for now (in Barret WAM) are - 
+The type of tasks I am considering for now (in Barret WAM) are - 
 - [x] Learning Inverse Kinemantics (learning how to reach a particular point inside the workspace)
 - [x] Learning to grasp a block and take it to a given goal inside the workspace
 - [x] Learning to stack a block on top of another block
@@ -151,7 +151,8 @@ For the Fetch robotic environments -
 ## Generating demonstrations
 Currently using a simple python script to generate demonstrations with the help of Inverse IK and Forward IK functionalities already in place for the robot I am using. Thus not all the generated demonstrations are perfect, which is good as our algorithm uses a Q-filter which accounts for all the bad demonstration data. The video below shows the demonstration generating paradigm for a 2 block stacking case, where one of the blocks is already at its goal position and the task involves stacking the second block on top of this block, the goal positions are shown in red in the rviz window next to gazebo (it is way easier to have markers in rviz than gazebo). When the block reaches its goal position the marker turns green.
 
-I provide a script for generating demonstration data for the fetch pick and place task. The file is `data_generation/fetch_data_generation.py`, and it is easy to modify if you need to generate demonstrations for other tasks.
+I provide a script for generating demonstration data for the fetch pick and place task. 
+The file is `data_generation/fetch_data_generation.py`, and it is easy to modify if you need to generate demonstrations for other tasks.
 
 > Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos of data generation.
 
@@ -170,7 +171,7 @@ Training with demonstrations helps overcome the exploration problem and achieves
 </div>
 
 <<div class="imgcap">
-<center><img src="assets/PickandplaceDemo.png"></center>
+<center><img src="assets/pickandplaceDemo.png"></center>
 <div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations.</b></div>
 </div>
 
