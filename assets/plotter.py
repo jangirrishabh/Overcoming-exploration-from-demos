@@ -3,7 +3,7 @@ from matplotlib.pyplot import plot, draw, show, figure, subplot, ion, pause, yla
 
 
 
-dataFile = '/home/rjangir/fetchDemoData/plots/plotting_data_GazeboWAMemptyEnv-v2.npz'
+dataFile = '/home/rjangir/fetchDemoData/plots/plotting_data_FetchPickAndPlace-v0_without_L2_Loss.npz'
 plotData = np.load(dataFile)
 
 

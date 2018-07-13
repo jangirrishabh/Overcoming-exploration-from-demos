@@ -45,7 +45,7 @@ DEFAULT_PARAMS = {
     'test_with_polyak': False,  # run test episodes with the target network
     # exploration
     'random_eps': 0.1,  # percentage of time a random action is taken
-    'noise_eps': 0.03,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+    'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     # HER
     'replay_strategy': 'future',  # supported modes: future, none
     'replay_k': 4,  # number of additional goals used for replay, only used if off_policy_data=future
