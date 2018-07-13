@@ -27,7 +27,7 @@ I'm solving different tasks in two different environments, Fetch robotic environ
 </div>
 
 <div class="imgcap" align="middle">
-<center><img src="assets/fetchEnv.png" width="45%"></center>
+<center><img src="assets/fetchEnv.png" width="50%"></center>
 <div class="thecap" align="middle"><b>The Fetch Arm simulation.</b></div>
 </div>
 
@@ -85,9 +85,8 @@ def sample_batch(self):
 
 
 ## Behavior Cloning Loss applied on the actor's actions
-Second, we introduce a new loss computed only on the demonstration examples for training the actor. This loss is a standard loss in imitation learning, but we show that using it as an  auxiliary loss for RL improves learning significantly. The gradient applied to the actor parameters is. (Note  that  we  maximize J and  minimize L<sub>BC</sub>. Using this loss directly prevents the learned policy from improving significantly beyond the demonstration policy, as the actor is always tied back to the demonstrations. 
+Second, we introduce a new loss computed only on the demonstration examples for training the actor. This loss is a standard loss in imitation learning, but we show that using it as an  auxiliary loss for RL improves learning significantly. The loss implementation can be seen in the following code. Please refer to the blog for more information on equations.
 
-> Please read the paper to go through the meaning of the symbols used in these equations
 
 ## Q-value filter to account for imperfect demonstrations
 We account for the possibility that demonstrations can be suboptimal by applying the behavior cloning loss only to states  where  the  critic Q(s,a)  determines  that  the  demonstrator action is better than the actor action. In python this looks like:
@@ -127,7 +126,7 @@ def _create_network(self, reuse=False):
 Here, we first mask the samples such as to get the cloning loss only on the demonstration samples by using the `tf.boolean_mask` function. We have 3 types of losses depending on the chosen run-paramters. When using both behavior cloning loss with Q_Filter we create another mask that enables us to apply the behavior cloning loss to only those states where the critic Q(s,a) determines that the demonstrator action is better than the actor action.
 
 ## Experimentation
-The work is in progress and most of the experimentation is being carried out on a Barret WAM simulator, that is because I have access to a Barret WAM robot through the Perception and Manipulation Lab, IRI. I have frameworks for generating demonstartions using the Inverse Kinematics and Forward Kinematics nodes developed at IRI. Also, in [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation and then transfer it to the real robot, exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. 
+In [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation and then transfer it to the real robot, exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. But currently the whole simulation environment for Barret WAM arm developed at Perception and Manipulation group, IRI is not available in open source, thus I will be reporting the results on Fetch Robotics environments available from OpenAI gym.
 
 **UPDATE** After writing a script for generating demonstrations in the FetchPickAndPlace environment, training with demonstrations on Fetch environments was possible as well!
 
@@ -165,16 +164,30 @@ Training with demonstrations helps overcome the exploration problem and achieves
 
 
 
-<div class="imgcap">
-<center><img src="assets/pickPlaceFetch.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations.</b></div>
+<<div class="imgcap">
+<center><img src="assets/research/pickPlaceFetchPart1.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations. Actor and Critic losses.</b></div>
 </div>
 
 <p></p>
 
 <div class="imgcap">
-<center><img src="assets/fetchPickPlaceWithDemonstrations.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations.</b></div>
+<center><img src="assets/research/pickPlaceFetchPart2.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations. Cloning loss and mean Q-values.</b></div>
+</div>
+
+<p></p>
+
+<div class="imgcap">
+<center><img src="assets/research/fetchPickPlaceWithDemonstrationsPart1.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations. Actor and Critic losses.</b></div>
+</div>
+
+<p></p>
+
+<div class="imgcap">
+<center><img src="assets/research/fetchPickPlaceWithDemonstrationsPart2.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations. Cloning loss and mean Q-values.</b></div>
 </div>
 
 <p></p>
