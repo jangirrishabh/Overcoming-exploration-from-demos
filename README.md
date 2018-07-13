@@ -21,14 +21,17 @@ To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/
 I'm solving different tasks in two different environments, Fetch robotic environments from OpenAI gym, and Barret WAM simulation in Gazebo integrated with gym. The learning algorithm is agnostic of the simulation environment used. With the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo) the simulation environment in gazebo can be used as a stanalone gym environment with all the gym functionalities.
  
 
-<p align="left" ">
-  <img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png" width="60%" />
-</p>
+<div class="imgcap">
+<center><img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png" ></center>
+<div class="thecap" align="middle"><b>The Barret WAM robotic arm simulation in Gazebo.</b></div>
+</div>
+
+<div class="imgcap">
+<center><img src="assets/fetchEnv.png" width="50%"></center>
+<div class="thecap" align="middle"><b>The Fetch Arm simulation.</b></div>
+</div>
 
 
-<p align="right">
-  <img src="assets/fetchEnv.png" width="50%"/>
-</p>
 
 ## File descriptions and Usage
 The training paradigm to teach a task to an agent through previously recorded demonstrations involves-
@@ -150,6 +153,8 @@ For the Fetch robotic environments -
 ## Generating demonstrations
 Currently using a simple python script to generate demonstrations with the help of Inverse IK and Forward IK functionalities already in place for the robot I am using. Thus not all the generated demonstrations are perfect, which is good as our algorithm uses a Q-filter which accounts for all the bad demonstration data. The video below shows the demonstration generating paradigm for a 2 block stacking case, where one of the blocks is already at its goal position and the task involves stacking the second block on top of this block, the goal positions are shown in red in the rviz window next to gazebo (it is way easier to have markers in rviz than gazebo). When the block reaches its goal position the marker turns green.
 
+I provide a script for generating demonstration data for the fetch pick and place task. The file is `data_generation/fetch_data_generation.py`, and it is easy to modify if you need to generate demonstrations for other tasks.
+
 > Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos of data generation.
 
 ## Training details and Hyperparameters
@@ -157,6 +162,20 @@ We train the robot with the above shown demonstrations in the buffer. We sample 
 
 
 ## Resulting Behaviors
+Training with demonstrations helps overcome the exploration problem and achieves a faster and better convergence. The following graphs contrast the difference between training with and without demonstration data, I report the Actor and the Critic network losses vs Epoch, the mean Q values vs Epoch and the Cloning loss vs epoch, note that for the graph without demonstrations the Cloning loss is just a random plot and does not signify anything:
+
+
+
+<div class="imgcap">
+<center><img src="assets/pickPlaceFetch.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations.</b></div>
+</div>
+
+<<div class="imgcap">
+<center><img src="assets/PickandplaceDemo.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations.</b></div>
+</div>
+
 Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other and other tasks as well.
 
 <!-- ###her.py
