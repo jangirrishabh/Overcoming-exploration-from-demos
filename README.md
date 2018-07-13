@@ -21,17 +21,15 @@ To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/
 I'm solving different tasks in two different environments, Fetch robotic environments from OpenAI gym, and Barret WAM simulation in Gazebo integrated with gym. The learning algorithm is agnostic of the simulation environment used. With the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo) the simulation environment in gazebo can be used as a stanalone gym environment with all the gym functionalities.
  
 
-<div class="imgcap">
+<div class="imgcap" align="middle">
 <center><img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png" ></center>
 <div class="thecap" align="middle"><b>The Barret WAM robotic arm simulation in Gazebo.</b></div>
 </div>
 
-<div class="imgcap">
-<center><img src="assets/fetchEnv.png" width="50%"></center>
+<div class="imgcap" align="middle">
+<center><img src="assets/fetchEnv.png" width="45%"></center>
 <div class="thecap" align="middle"><b>The Fetch Arm simulation.</b></div>
 </div>
-
-
 
 ## File descriptions and Usage
 The training paradigm to teach a task to an agent through previously recorded demonstrations involves-
