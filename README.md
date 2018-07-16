@@ -4,21 +4,25 @@ Implementation of the paper "Overcoming Exploration in Reinforcement Learning wi
 
 > Note: This repository is a modification of her baselines from OpenAI
 
-To know more please visit my blog at https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html
+To know more please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html).
 
 
 ## Installation 
-- Install Python 3.5 or higher
+1. Install Python 3.5 or higher
 
-- Clone the baselines from OpenAI, use the following commit in case of any conflicts - a6b1bc70f156dc45c0da49be8e80941a88021700
+2. Clone the baselines from OpenAI, use the following commit in case of any conflicts - a6b1bc70f156dc45c0da49be8e80941a88021700
 
-- Clone this package in your working directory with `git clone https://github.com/jangirrishabh/Overcoming-exploration-from-demos.git`
+3. Clone this package in your working directory with `git clone https://github.com/jangirrishabh/Overcoming-exploration-from-demos.git`
 
-- Add this package to your PYTHONPATH or if you are not familiar with that alternatively edit `sys.path.append('/path/to/Overcoming-exploration-from-demos/')`  in **train.py**, **play.py** and **config.py**
+4. Add this package to your PYTHONPATH or if you are not familiar with that alternatively edit `sys.path.append('/path/to/Overcoming-exploration-from-demos/')`  in **train.py**, **play.py** and **config.py**
 
 
 ## Environments
-I'm solving different tasks in two different environments, Fetch robotic environments from OpenAI gym, and Barret WAM simulation in Gazebo integrated with gym. The learning algorithm is agnostic of the simulation environment used. With the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo) the simulation environment in gazebo can be used as a stanalone gym environment with all the gym functionalities.
+I'm solving different tasks in two different environments:
+* Fetch robotic environments from OpenAI gym
+* Barret WAM simulation in Gazebo integrated with gym.
+
+The learning algorithm is agnostic of the simulation environment used. With the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), the simulation environment in gazebo can be used as a stanalone gym environment with all the gym functionalities.
  
 
 <div class="imgcap" align="middle">
@@ -32,7 +36,7 @@ I'm solving different tasks in two different environments, Fetch robotic environ
 </div>
 
 ## File descriptions and Usage
-The training paradigm to teach a task to an agent through previously recorded demonstrations involves-
+The training paradigm to teach a task to an agent through previously recorded demonstrations involves:
 
 ### [Training](experiments/train.py)
 Configure the run parameters at the bottom of the file, select the environment you wish to use by changing the environment name, additional parameters since the her baselines are:
@@ -47,12 +51,12 @@ To start the training use `python experiment/train.py`.
 The above training paradigm spits out policies as .pkl files after every 5 epochs (can be modified) which we can then replay and evaluate with this file. To play the policy execute `python experiments/play.py /path/to/saved/policy.pkl`.
 
 ### [Configuration](experiments/config.py)
-All the training hyperparameters can be configured through this file, feel free to experiment with different combinations and record results.
+All the training hyperparameters can be configured through this file. Feel free to experiment with different combinations and record results.
 
 ### [DDPG agent](ddpg.py)
 Contains the main DDPG algorithm with a modified network where the losses are changed based on the whether demonstrations are provided for the task. Basically we maintain a separate demoBuffer and sample from this as well. Following parameters are to be configured here:
-- self.demo_batch_size : number of demos out of total buffer size (128/1024 default)
-- self.lambda1, self.lambda2 : correspond to the weights given for Q loss and Behavior cloning loss respectively
+- self.demo_batch_size: Number of demos out of total buffer size (128/1024 default)
+- self.lambda1, self.lambda2: Correspond to the weights given for Q loss and Behavior cloning loss respectively
 
 
 Major contributions of the paper include the following aspects which I have tried to implement over the HER baselines:
@@ -126,26 +130,25 @@ def _create_network(self, reuse=False):
 Here, we first mask the samples such as to get the cloning loss only on the demonstration samples by using the `tf.boolean_mask` function. We have 3 types of losses depending on the chosen run-paramters. When using both behavior cloning loss with Q_Filter we create another mask that enables us to apply the behavior cloning loss to only those states where the critic Q(s,a) determines that the demonstrator action is better than the actor action.
 
 ## Experimentation
-In [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym with the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation and then transfer it to the real robot, exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. But currently the whole simulation environment for Barret WAM arm developed at Perception and Manipulation group, IRI is not available in open source, thus I will be reporting the results on Fetch Robotics environments available from OpenAI gym.
+In [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) repository I integrated the barret WAM Gazebo simulation with OpenAI gym using [Gym-gazebo](https://github.com/erlerobot/gym-gazebo). Thus the simulation environment in gazebo can now be used as a stanalone gym environment with all the functionalities. The plan is to first learn the initial policy on a simulation, and then transfer it to the real robot. Exploration in RL can lead to wild actions which are not feasible when working with a physical  platform. But, currently, the whole simulation environment for Barret WAM arm developed at Perception and Manipulation group, IRI is not available in open source, thus I will be reporting the results on Fetch Robotics environments available from OpenAI gym.
 
-**UPDATE** After writing a script for generating demonstrations in the FetchPickAndPlace environment, training with demonstrations on Fetch environments was possible as well!
+**UPDATE:** After writing a script for generating demonstrations in the FetchPickAndPlace environment, training with demonstrations on Fetch environments was possible as well!
 
 
 
 ## Tasks
-The type of tasks I am considering for now (in Barret WAM) are - 
-- [x] Learning Inverse Kinemantics (learning how to reach a particular point inside the workspace)
-- [x] Learning to grasp a block and take it to a given goal inside the workspace
-- [x] Learning to stack a block on top of another block
-- [ ] Learning to stack 4 blocks on top of each other
+The type of tasks I am considering for now (in Barret WAM) are:  
+✓ Learning Inverse Kinemantics (learning how to reach a particular point inside the workspace)  
+✓ Learning to grasp a block and take it to a given goal inside the workspace  
+✓ Learning to stack a block on top of another block  
+✗ Learning to stack 4 blocks on top of each other
 
-For the Fetch robotic environments - 
-- [x] Reaching
-- [x] Pick and Place
-- [ ] Push (Difficult to generate demonstrations without VR module)
+For the Fetch robotic environments:   
+✓ Reaching  
+✓ Pick and Place  
+✗ Push (Difficult to generate demonstrations without VR module)
 
-
-> Note: All of these tasks have a sparse reward structure i.e. 0 if the task is complete else a -1.
+Note: All of these tasks have a sparse reward structure i.e. 0 if the task is complete else a -1.
 
 ## Generating demonstrations
 Currently using a simple python script to generate demonstrations with the help of Inverse IK and Forward IK functionalities already in place for the robot I am using. Thus not all the generated demonstrations are perfect, which is good as our algorithm uses a Q-filter which accounts for all the bad demonstration data. The video below shows the demonstration generating paradigm for a 2 block stacking case, where one of the blocks is already at its goal position and the task involves stacking the second block on top of this block, the goal positions are shown in red in the rviz window next to gazebo (it is way easier to have markers in rviz than gazebo). When the block reaches its goal position the marker turns green.
