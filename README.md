@@ -138,15 +138,15 @@ In [this](https://github.com/jangirrishabh/HER-learn-InverseKinematics) reposito
 
 ## Tasks
 The type of tasks I am considering for now (in Barret WAM) are:  
-✓ Learning Inverse Kinemantics (learning how to reach a particular point inside the workspace)  
-✓ Learning to grasp a block and take it to a given goal inside the workspace  
-✓ Learning to stack a block on top of another block  
-✗ Learning to stack 4 blocks on top of each other
+- [x] Learning Inverse Kinemantics (learning how to reach a particular point inside the workspace)  
+- [x] Learning to grasp a block and take it to a given goal inside the workspace  
+- [x] Learning to stack a block on top of another block  
+- [ ] Learning to stack 4 blocks on top of each other
 
 For the Fetch robotic environments:   
-✓ Reaching  
-✓ Pick and Place  
-✗ Push (Difficult to generate demonstrations without VR module)
+- [x] Reaching  
+- [x] Pick and Place  
+- [ ] Push (Difficult to generate demonstrations without VR module)
 
 Note: All of these tasks have a sparse reward structure i.e. 0 if the task is complete else a -1.
 
