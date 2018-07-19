@@ -29,7 +29,7 @@ def mpi_average(value):
 
 def train(policy, rollout_worker, evaluator,
           n_epochs, n_test_rollouts, n_cycles, n_batches, policy_save_interval,
-          save_policies, demo_file_name, **kwargs):
+          save_policies, demo_file, **kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
 
     latest_policy_path = os.path.join(logger.get_dir(), 'policy_latest.pkl')
@@ -95,7 +95,7 @@ def train(policy, rollout_worker, evaluator,
 
 
 def launch(
-    env, logdir, n_epochs, num_cpu, seed, replay_strategy, policy_save_interval, clip_return, 
+    env, logdir, n_epochs, num_cpu, seed, replay_strategy, policy_save_interval, clip_return, demo_file,
     override_params={}, save_policies=True
 ):
     # Fork for multi-CPU MPI implementation.
@@ -234,7 +234,7 @@ def launch(
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--demo_file', type=str, default = '/home/rjangir/fetchDemoData/data_fetch_random_100.npz', help='demo data file path')
+@click.option('--demo_file', type=str, default = '/home/rjangir/wamdata/data_wam_reach_random_100_30_18.npz', help='demo data file path')
 def main(**kwargs):
     launch(**kwargs)
 
