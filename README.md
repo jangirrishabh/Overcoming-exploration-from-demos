@@ -9,7 +9,7 @@ Training with demonstrations helps overcome the exploration problem and achieves
 
 <div class="imgcap" align="middle">
 <center><img src="assets/fetchPickAndPlaceContrast.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations. Actor and Critic losses.</b></div>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task constrasting between training with and without demonstration data.</b></div>
 </div>
 
 <p></p>
