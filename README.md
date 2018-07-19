@@ -15,7 +15,7 @@ Training with demonstrations helps overcome the exploration problem and achieves
 <p></p>
 
 
-Clearly, the use of demonstrations enables a faster and better convergence in the Q values as apparent from the graphs. Also the success condition is achieved much faster reaching upto 100% performance just around the 400th epoch whereas in the case without demonstrations even after 1000 iterations the agent hardly reaches 70% success rate. Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other and other tasks as well.
+Clearly, the use of demonstrations enables a faster and better convergence in the Q values as apparent from the graphs. Also the success condition is achieved much faster reaching upto 100% performance just around the 400th epoch whereas in the case without demonstrations even after 1000 iterations the agent hardly reaches 70% success rate. Visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other and other tasks as well.
 
 
 ## Installation 
@@ -100,7 +100,7 @@ def sample_batch(self):
 
 
 ## Behavior Cloning Loss applied on the actor's actions
-Second, we introduce a new loss computed only on the demonstration examples for training the actor. This loss is a standard loss in imitation learning, but we show that using it as an  auxiliary loss for RL improves learning significantly. The loss implementation can be seen in the following code. Please refer to the blog for more information on equations.
+Second, we introduce a new loss computed only on the demonstration examples for training the actor. This loss is a standard loss in imitation learning, but we show that using it as an  auxiliary loss for RL improves learning significantly. The loss implementation can be seen in the following code. Refer to the blog for more information on equations.
 
 
 ## Q-value filter to account for imperfect demonstrations
@@ -167,12 +167,10 @@ Currently using a simple python script to generate demonstrations with the help 
 I provide a script for generating demonstration data for the fetch pick and place task. 
 The file is `data_generation/fetch_data_generation.py`, and it is easy to modify if you need to generate demonstrations for other tasks.
 
-> Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos of data generation.
+> Visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos of data generation.
 
 ## Training details and Hyperparameters
 We train the robot with the above shown demonstrations in the buffer. We sample a total of 100 demonstrations/rollouts and in every minibatch sample N<sub>D</sub> = 128 samples from the demonstrations in a total of N = 1024 samples, the rest of the samples are generated when the arm interacts with the environment. To train the model we use Adam optimizer with learning rate 0.001 for both critic and actor networks. The discount factor is 0.98. To explore during training, we sample random actions uniformly within the action space with a probability of 0.1 at every step, with an additional uniform gaussian noise which is 10% of the maximum value of each action dimension. For details about more hyperparameters, refer to config.py in the source code. Both the environments are trained with the same set of hyperparameters for now in the reported results.
-
-To know more please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html).
 
 
 
