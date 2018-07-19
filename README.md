@@ -37,18 +37,14 @@ The learning algorithm is agnostic of the simulation environment used. With the 
  
 
 <div class="imgcap" align="middle">
-<center><img src="https://media.giphy.com/media/pjvPYgOj4tLsN2KDEq/giphy.gif"></center>
-<div class="thecap" align="middle"><b>Learned behavior on a Fetch Arm simulation</b></div>
-</div>
-
-<div class="imgcap" align="middle">
 <center><img src="https://media.giphy.com/media/5QIbWA5nYNlGPIG5kN/giphy.gif" ></center>
 <div class="thecap" align="middle"><b>Learned behavior on a Barret WAM robotic arm simulation in Gazebo</b></div>
 </div>
 
-
-
-
+<div class="imgcap" align="middle">
+<center><img src="https://media.giphy.com/media/pjvPYgOj4tLsN2KDEq/giphy.gif"></center>
+<div class="thecap" align="middle"><b>Learned behavior on a Fetch Arm simulation</b></div>
+</div>
 
 
 
