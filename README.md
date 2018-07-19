@@ -4,7 +4,7 @@ Implementation of the paper "Overcoming Exploration in Reinforcement Learning wi
 
 > Note: This repository is a modification of her baselines from OpenAI
 
-## Resulting Behaviors
+## Results
 Training with demonstrations helps overcome the exploration problem and achieves a faster and better convergence. The following graphs contrast the difference between training with and without demonstration data, I report the the mean Q values vs Epoch and the Success Rate vs Epoch:
 
 <div class="imgcap" align="middle">
