@@ -34,7 +34,7 @@ def main(policy_file, seed, n_test_rollouts, render):
 
     dims = config.configure_dims(params)
 
-    if params['env_name'] == 'GazeboWAMemptyEnv-v2':
+    if params['env_name'] == 'GazeboWAMemptyEnv-v1':
         eval_params = {
             'exploit': True,
             'use_target_net': params['test_with_polyak'],

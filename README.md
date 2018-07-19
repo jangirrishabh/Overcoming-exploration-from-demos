@@ -4,7 +4,18 @@ Implementation of the paper "Overcoming Exploration in Reinforcement Learning wi
 
 > Note: This repository is a modification of her baselines from OpenAI
 
-To know more please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html).
+## Resulting Behaviors
+Training with demonstrations helps overcome the exploration problem and achieves a faster and better convergence. The following graphs contrast the difference between training with and without demonstration data, I report the the mean Q values vs Epoch and the Success Rate vs Epoch:
+
+<div class="imgcap" align="middle">
+<center><img src="assets/fetchPickAndPlaceContrast.png"></center>
+<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations. Actor and Critic losses.</b></div>
+</div>
+
+<p></p>
+
+
+Clearly, the use of demonstrations enables a faster and better convergence in the Q values as apparent from the graphs. Also the success condition is achieved much faster reaching upto 100% performance just around the 400th epoch whereas in the case without demonstrations even after 1000 iterations the agent hardly reaches 70% success rate. Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other and other tasks as well.
 
 
 ## Installation 
@@ -161,39 +172,7 @@ The file is `data_generation/fetch_data_generation.py`, and it is easy to modify
 ## Training details and Hyperparameters
 We train the robot with the above shown demonstrations in the buffer. We sample a total of 100 demonstrations/rollouts and in every minibatch sample N<sub>D</sub> = 128 samples from the demonstrations in a total of N = 1024 samples, the rest of the samples are generated when the arm interacts with the environment. To train the model we use Adam optimizer with learning rate 0.001 for both critic and actor networks. The discount factor is 0.98. To explore during training, we sample random actions uniformly within the action space with a probability of 0.1 at every step, with an additional uniform gaussian noise which is 10% of the maximum value of each action dimension. For details about more hyperparameters, refer to config.py in the source code. Both the environments are trained with the same set of hyperparameters for now in the reported results.
 
+To know more please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html).
 
-## Resulting Behaviors
-Training with demonstrations helps overcome the exploration problem and achieves a faster and better convergence. The following graphs contrast the difference between training with and without demonstration data, I report the Actor and the Critic network losses vs Epoch, the mean Q values vs Epoch and the Cloning loss vs epoch, note that for the graph without demonstrations the Cloning loss is just a random plot and does not signify anything:
-
-<div class="imgcap" align="middle">
-<center><img src="assets/pickPlaceFetchPart1.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations. Actor and Critic losses.</b></div>
-</div>
-
-<p></p>
-
-<div class="imgcap" align="middle">
-<center><img src="assets/pickPlaceFetchPart2.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task without demonstrations. Cloning loss and mean Q-values.</b></div>
-</div>
-
-<p></p>
-
-<div class="imgcap" align="middle">
-<center><img src="assets/fetchPickPlaceWithDemonstrationsPart1.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations. Actor and Critic losses.</b></div>
-</div>
-
-<p></p>
-
-<div class="imgcap" align="middle">
-<center><img src="assets/fetchPickPlaceWithDemonstrationsPart2.png"></center>
-<div class="thecap" align="middle"><b>Training results for Fetch Pick and Place task with the generated demonstrations. Cloning loss and mean Q-values.</b></div>
-</div>
-
-<p></p>
-
-
-Clearly, the use of demonstrations enables a faster and better convergence in the Q values as apparent from the graphs. Also the Critic and Actor losses decrease sharply and much lower values. Please visit my [blog](https://jangirrishabh.github.io/2018/03/25/Overcoming-exploration-demos.html) to see the videos. The video shows the agent's learned behavior corresponding to the task of stacking one block on top of the other and other tasks as well.
 
 

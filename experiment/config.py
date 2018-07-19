@@ -32,7 +32,7 @@ DEFAULT_PARAMS = {
     'pi_lr': 0.001,  # actor learning rate
     'buffer_size': int(1E6),  # for experience replay
     'polyak': 0.8,  # polyak averaging coefficient
-    'action_l2': 2.0,  # quadratic penalty on actions (before rescaling by max_u)
+    'action_l2': 1.0,  # quadratic penalty on actions (before rescaling by max_u)
     'clip_obs': 200.,
     'scope': 'ddpg',  # can be tweaked for testing
     'relative_goals': False,
@@ -44,7 +44,7 @@ DEFAULT_PARAMS = {
     'n_test_rollouts': 10,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
     'test_with_polyak': False,  # run test episodes with the target network
     # exploration
-    'random_eps': 0.1,  # percentage of time a random action is taken
+    'random_eps': 0.2,  # percentage of time a random action is taken
     'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     # HER
     'replay_strategy': 'future',  # supported modes: future, none
