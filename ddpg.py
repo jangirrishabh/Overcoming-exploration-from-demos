@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
-import random
 from tensorflow.contrib.staging import StagingArea
 
 from baselines import logger
@@ -10,7 +9,7 @@ from util import (import_function, store_args, flatten_grads, transitions_in_epi
 from normalizer import Normalizer
 from replay_buffer import ReplayBuffer
 from baselines.common.mpi_adam import MpiAdam
-from baselines.her.util import convert_episode_to_batch_major, store_args
+from baselines.her.util import convert_episode_to_batch_major
 
 def dims_to_shapes(input_dims):
     return {key: tuple([val]) if val > 0 else tuple() for key, val in input_dims.items()}
@@ -66,9 +65,8 @@ class DDPG(object):
 
 
         self.demo_batch_size = 128
-        self.lambda1 = 0.001
-        self.lambda2 =  0.0078
-
+        self.lambda1 = 0.001 #default = 0.001
+        self.lambda2 =  0.003 #default = 0.0078
         self.l2_reg_coeff = 0.005
 
         # Prepare staging area for feeding data to the model.
@@ -238,15 +236,13 @@ class DDPG(object):
 
     def _grads(self):
         # Avoid feed_dict here for performance!
-        critic_loss, actor_loss, q_pi_tf, cloning_loss, Q_grad, pi_grad = self.sess.run([
+        critic_loss , actor_loss, Q_grad, pi_grad = self.sess.run([
             self.Q_loss_tf,
             self.pi_loss_tf,
-            self.main.Q_pi_tf,
-            self.cloning_loss_tf,
             self.Q_grad_tf,
             self.pi_grad_tf
         ])
-        return critic_loss, actor_loss, q_pi_tf, cloning_loss, Q_grad, pi_grad
+        return critic_loss, actor_loss, Q_grad, pi_grad
 
     def _update(self, Q_grad, pi_grad):
         self.Q_adam.update(Q_grad, self.Q_lr)
@@ -286,9 +282,9 @@ class DDPG(object):
     def train(self, stage=True):
         if stage:
             self.stage_batch()
-        critic_loss, actor_loss, q_pi_tf, cloning_loss, Q_grad, pi_grad = self._grads()
+        critic_loss, actor_loss, Q_grad, pi_grad = self._grads()
         self._update(Q_grad, pi_grad)
-        return critic_loss, actor_loss, cloning_loss
+        return critic_loss, actor_loss
 
     def _init_target_net(self):
         self.sess.run(self.init_target_net_op)
@@ -375,15 +371,12 @@ class DDPG(object):
             self.cloning_loss_tf = tf.reduce_sum(tf.square(self.main.pi_tf - batch_tf['u'])) #random
 
 
-        # varTempCritic = [v for v in tf.trainable_variables() if v.name == "main/Q"]
-        # #regularizerCritic = tf.nn.l2_loss(self._vars('main/Q'))
-        # regularizerCritic = tf.nn.l2_loss(varTempCritic)
-        # self.Q_loss_tf = tf.reduce_mean(self.Q_loss_tf + self.l2_reg_coeff*regularizerCritic)
-
-        # varTempActor = [v for v in tf.trainable_variables() if v.name == "main/pi"]
-
-        # regularizerActor = tf.nn.l2_loss(varTempActor)
-        # self.pi_loss_tf = tf.reduce_mean(self.pi_loss_tf + self.l2_reg_coeff*regularizerActor)
+        varTempCritic = [v for v in tf.trainable_variables() if v.name == "main/Q"]
+        varTempActor = [v for v in tf.trainable_variables() if v.name == "main/pi"]
+        regularizerCritic = tf.nn.l2_loss(varTempCritic)
+        regularizerActor = tf.nn.l2_loss(varTempActor)
+        self.Q_loss_tf = tf.reduce_mean(self.Q_loss_tf + self.l2_reg_coeff*regularizerCritic)
+        self.pi_loss_tf = tf.reduce_mean(self.pi_loss_tf + self.l2_reg_coeff*regularizerActor)
             
 
         Q_grads_tf = tf.gradients(self.Q_loss_tf, self._vars('main/Q'))

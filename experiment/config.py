@@ -32,7 +32,7 @@ DEFAULT_PARAMS = {
     'pi_lr': 0.001,  # actor learning rate
     'buffer_size': int(1E6),  # for experience replay
     'polyak': 0.8,  # polyak averaging coefficient
-    'action_l2': 1.0,  # quadratic penalty on actions (before rescaling by max_u)
+    'action_l2': 2.0,  # quadratic penalty on actions (before rescaling by max_u)
     'clip_obs': 200.,
     'scope': 'ddpg',  # can be tweaked for testing
     'relative_goals': False,
@@ -52,6 +52,9 @@ DEFAULT_PARAMS = {
     # normalization
     'norm_eps': 0.01,  # epsilon used for observation normalization
     'norm_clip': 5,  # normalized observations are cropped to this values
+    'bc_loss': 1, # whether or not to use the behavior cloning loss as an auxilliary loss
+    'q_filter': 1, # whether or not a Q value filter should be used on the Actor outputs
+    'num_demo': 100 # number of expert demo episodes
 }
 
 
@@ -134,7 +137,7 @@ def simple_goal_subtract(a, b):
     return a - b
 
 
-def configure_ddpg(dims, params, bc_loss, q_filter, num_demo, reuse=False, use_mpi=True, clip_return=True):
+def configure_ddpg(dims, params, reuse=False, use_mpi=True, clip_return=True):
     sample_her_transitions = configure_her(params)
     # Extract relevant parameters.
     gamma = params['gamma']
@@ -154,11 +157,14 @@ def configure_ddpg(dims, params, bc_loss, q_filter, num_demo, reuse=False, use_m
                         'subtract_goals': simple_goal_subtract,
                         'sample_transitions': sample_her_transitions,
                         'gamma': gamma,
+                        'bc_loss': params['bc_loss'],
+                        'q_filter': params['q_filter'],
+                        'num_demo': params['num_demo'],
                         })
     ddpg_params['info'] = {
         'env_name': params['env_name'],
     }
-    policy = DDPG(reuse=reuse, **ddpg_params, use_mpi=use_mpi, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
+    policy = DDPG(reuse=reuse, **ddpg_params, use_mpi=use_mpi)
     return policy
 
 

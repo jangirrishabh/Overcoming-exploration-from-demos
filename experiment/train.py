@@ -6,7 +6,6 @@ import numpy as np
 import json
 from mpi4py import MPI
 import resource
-from matplotlib.pyplot import plot, draw, show, figure, subplot, ion, pause, ylabel, xlabel
 
 sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-demos/')
 
@@ -14,7 +13,6 @@ from baselines import logger
 from baselines.common import set_global_seeds
 from baselines.common.mpi_moments import mpi_moments
 import config
-#from baselines.her.rollout import RolloutWorker, RolloutWorkerOriginal
 from rollout import RolloutWorker, RolloutWorkerOriginal
 from util import mpi_fork
 
@@ -41,34 +39,20 @@ def train(policy, rollout_worker, evaluator,
     logger.info("Training...")
     best_success_rate = -1
     best_success_epoch = 0
-    mean_Q_test = 0
-    mean_Q_test_plotData = []
-    epoch_plotData = []
-    criticLoss_plotData = []
-    actorLoss_plotData = []
-    cloningLoss_plotData = []
-    epochTime = []
 
-    
-
-    if policy.bc_loss == 1: policy.initDemoBuffer(demo_file_name) #initializwe demo buffer
+    if policy.bc_loss == 1: policy.initDemoBuffer(demo_file) #initializwe demo buffer
     for epoch in range(n_epochs):
         # train
-        #start = time.time()
-        criticLoss, actorLoss, cloningLoss = 0, 0, 0
         rollout_worker.clear_history()
         for _ in range(n_cycles):
             episode = rollout_worker.generate_rollouts()
             policy.store_episode(episode)
             for _ in range(n_batches):
-                a, b, c = policy.train()
-                criticLoss += a
-                actorLoss += b
-                cloningLoss += c 
+                policy.train()
             policy.update_target_net()
 
         # test
-        print("Testing")
+        logger.info("Testing")
         evaluator.clear_history()
         for _ in range(n_test_rollouts):
             evaluator.generate_rollouts()
@@ -79,25 +63,13 @@ def train(policy, rollout_worker, evaluator,
 
         for key, val in evaluator.logs('test'):
             logger.record_tabular(key, mpi_average(val))
-            if key=='test/mean_Q':
-                mean_Q_test = mpi_average(val)
         for key, val in rollout_worker.logs('train'):
             logger.record_tabular(key, mpi_average(val))
         for key, val in policy.logs():
             logger.record_tabular(key, mpi_average(val))
-        logger.record_tabular('criticLoss', criticLoss/policy.T)
-        logger.record_tabular('actorLoss', actorLoss/policy.T)
-        logger.record_tabular('cloningLoss', cloningLoss/policy.T)
 
         if rank == 0:
             logger.dump_tabular()
-
-        mean_Q_test_plotData.append(mean_Q_test)
-        epoch_plotData.append(epoch)
-        criticLoss_plotData.append(criticLoss/policy.T)
-        actorLoss_plotData.append(actorLoss/policy.T)
-        cloningLoss_plotData.append(cloningLoss/policy.T)
-
 
 
         # save the policy if it's better than the previous ones
@@ -121,60 +93,9 @@ def train(policy, rollout_worker, evaluator,
         if rank != 0:
             assert local_uniform[0] != root_uniform[0]
 
-        if epoch%100==0 and epoch!=0:
-            ion()
-            show()
-
-            figure(1)
-            subplot(211)
-            ylabel('Critic Loss')
-            xlabel('Epoch')
-            plot(epoch_plotData, criticLoss_plotData, 'k')
-
-            subplot(212)
-            ylabel('Actor Loss')
-            xlabel('Epoch')
-            plot(epoch_plotData, actorLoss_plotData, 'r--')
-            
-
-            figure(2)
-            subplot(211)
-            ylabel('Cloning Loss')
-            xlabel('Epoch')
-            plot(epoch_plotData, cloningLoss_plotData, 'r--')
-
-            subplot(212)
-            ylabel('mean Q value')
-            xlabel('Epoch')
-            plot(epoch_plotData, mean_Q_test_plotData, 'r--')
-
-            
-
-            
-            # epochTime.append(time.time() - start)
-            # figure(3)
-            # ylabel('Time taken for epoch')
-            # xlabel('Epoch')
-            # plot(epoch_plotData, epochTime, 'r--')
-
-            draw()
-            pause(0.01)
-            #print('Took: %f seconds' %(time.time() - start))
-
-            fileName = "plotting_data"
-            #fileName += "_" + 'FetchPickAndPlace-v0'
-            fileName += "_" + 'GazeboWAMemptyEnv-v2'
-            #fileName += "_" + 'l2_loss_No_l2_regularization'
-            fileName += ".npz"
-
-            np.savez_compressed(fileName, epoch=epoch_plotData, critic_loss=criticLoss_plotData, actor_loss=actorLoss_plotData, cloning_loss=cloningLoss_plotData , q_value=mean_Q_test_plotData)
-
-
-    show()
-
 
 def launch(
-    env, logdir, n_epochs, num_cpu, seed, replay_strategy, policy_save_interval, clip_return, bc_loss, q_filter, num_demo,
+    env, logdir, n_epochs, num_cpu, seed, replay_strategy, policy_save_interval, clip_return, 
     override_params={}, save_policies=True
 ):
     # Fork for multi-CPU MPI implementation.
@@ -231,11 +152,9 @@ def launch(
         logger.warn()
 
     dims = config.configure_dims(params)
-    policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return, bc_loss=bc_loss, q_filter=q_filter, num_demo=num_demo)
+    policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return)
 
-    if params['env_name'] == 'GazeboWAMemptyEnv-v2':
-
-        demoFileName = '/home/rjangir/wamObjectDemoData/data_wam_double_random_100_40_25.npz'
+    if params['env_name'] == 'GazeboWAMemptyEnv-v1':
         rollout_params = {
             'exploit': False,
             'use_target_net': False,
@@ -268,8 +187,6 @@ def launch(
         evaluator = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **eval_params)
         evaluator.seed(rank_seed)
     else:
-
-        demoFileName = '/home/rjangir/fetchDemoData/data_fetch_random_100.npz'
         rollout_params = {
             'exploit': False,
             'use_target_net': False,
@@ -303,12 +220,13 @@ def launch(
         logdir=logdir, policy=policy, rollout_worker=rollout_worker,
         evaluator=evaluator, n_epochs=n_epochs, n_test_rollouts=params['n_test_rollouts'],
         n_cycles=params['n_cycles'], n_batches=params['n_batches'],
-        policy_save_interval=policy_save_interval, save_policies=save_policies, demo_file_name = demoFileName)
+        policy_save_interval=policy_save_interval, save_policies=save_policies, demo_file = demo_file)
 
 
 @click.command()
 #@click.option('--env', type=str, default='FetchPickAndPlace-v0', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
+#@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
+@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
 @click.option('--logdir', type=str, default=None, help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
 @click.option('--n_epochs', type=int, default=1000, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
@@ -316,9 +234,7 @@ def launch(
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--bc_loss', type=int, default=1, help='whether or not to use the behavior cloning loss as an auxilliary loss')
-@click.option('--q_filter', type=int, default=1, help='whether or not a Q value filter should be used on the Actor outputs')
-@click.option('--num_demo', type=int, default = 50, help='number of expert demo episodes')
+@click.option('--demo_file', type=str, default = '/home/rjangir/fetchDemoData/data_fetch_random_100.npz', help='demo data file path')
 def main(**kwargs):
     launch(**kwargs)
 
