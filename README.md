@@ -36,7 +36,7 @@ I'm solving different tasks in two different environments:
 The learning algorithm is agnostic of the simulation environment used. With the help of [Gym-gazebo](https://github.com/erlerobot/gym-gazebo), the simulation environment in gazebo can be used as a stanalone gym environment with all the gym functionalities.
  
 
-<div class="imgcap" align="middle">
+<!-- <div class="imgcap" align="middle">
 <center><img src="https://github.com/jangirrishabh/jangirrishabh.github.io/blob/master/assets/research/wam_single_block_reach.png" ></center>
 <div class="thecap" align="middle"><b>The Barret WAM robotic arm simulation in Gazebo.</b></div>
 </div>
@@ -44,7 +44,13 @@ The learning algorithm is agnostic of the simulation environment used. With the 
 <div class="imgcap" align="middle">
 <center><img src="assets/fetchEnv.png" width="48%"></center>
 <div class="thecap" align="middle"><b>The Fetch Arm simulation.</b></div>
-</div>
+</div> -->
+
+
+![Learned behavior on a Barret WAM robotic arm simulation in Gazebo.](https://media.giphy.com/media/5QIbWA5nYNlGPIG5kN/giphy.gif)
+
+![Learned behavior on a Fetch Arm simulation.](https://media.giphy.com/media/pjvPYgOj4tLsN2KDEq/giphy.gif)
+
 
 ## File descriptions and Usage
 The training paradigm to teach a task to an agent through previously recorded demonstrations involves:
