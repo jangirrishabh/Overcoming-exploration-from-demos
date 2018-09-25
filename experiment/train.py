@@ -45,7 +45,10 @@ def train(policy, rollout_worker, evaluator,
         # train
         rollout_worker.clear_history()
         for _ in range(n_cycles):
-            episode = rollout_worker.generate_rollouts()
+            if (np.random.normal(0, 1, 1) > 0):
+                episode = rollout_worker.generate_rollouts_from_demo()
+            else:
+                episode = rollout_worker.generate_rollouts()
             policy.store_episode(episode)
             for _ in range(n_batches):
                 policy.train()
@@ -193,7 +196,7 @@ def launch(
             'use_demo_states': True,
             'compute_Q': False,
             'T': params['T'],
-            #'render': 1,
+            'render': 0,
         }
 
         eval_params = {
@@ -202,7 +205,7 @@ def launch(
             #'use_demo_states': False,
             'compute_Q': True,
             'T': params['T'],
-            #'render': 1,
+            'render': 0,
         }
 
         for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
@@ -226,15 +229,16 @@ def launch(
 @click.command()
 #@click.option('--env', type=str, default='FetchPickAndPlace-v0', help='the name of the OpenAI Gym environment that you want to train on')
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--logdir', type=str, default=None, help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
-@click.option('--n_epochs', type=int, default=1000, help='the number of training epochs to run')
+#@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
+@click.option('--env', type=str, default='FetchStackThree-v0', help='the name of the OpenAI Gym environment that you want to train on')
+@click.option('--logdir', type=str, default='/home/rjangir/results/data_fetch_stack_three_resets', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
+@click.option('--n_epochs', type=int, default=20000, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
 @click.option('--seed', type=int, default=0, help='the random seed used to seed both the environment and the training code')
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--demo_file', type=str, default = '/home/rjangir/wamdata/data_wam_reach_random_100_30_18.npz', help='demo data file path')
+@click.option('--demo_file', type=str, default = '/home/rjangir/fetchDemoData/data_fetch_stack_three_100.npz', help='demo data file path')
 def main(**kwargs):
     launch(**kwargs)
 

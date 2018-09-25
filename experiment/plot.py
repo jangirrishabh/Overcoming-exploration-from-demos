@@ -58,7 +58,7 @@ args = parser.parse_args()
 
 # Load all data.
 data = {}
-args.dir = '/home/rjangir/policies/naya/' #parsing arguments not working well
+args.dir = '/home/rjangir/results/' #parsing arguments not working well
 paths = [os.path.abspath(os.path.join(path, '..')) for path in glob2.glob(os.path.join(args.dir, '**', 'progress.csv'))]
 for curr_path in paths:
     if not os.path.isdir(curr_path):
@@ -72,10 +72,11 @@ for curr_path in paths:
     with open(os.path.join(curr_path, 'params.json'), 'r') as f:
         params = json.load(f) #load the parameters from the param file
 
+
     success_rate = np.array(results['test/success_rate'])
     mean_Q = np.array(results['test/mean_Q'])
     epoch = np.array(results['epoch']) + 1
-    env_id = params['env_name']
+    env_id =  curr_path + '_' + params['env_name']
     replay_strategy = params['replay_strategy']
 
     if replay_strategy == 'future':
@@ -145,7 +146,7 @@ for env_id in sorted(data.keys()): # for all the env ids
 
         plt.subplots_adjust(top=0.92, bottom=0.1, left=0.15, right=0.95, hspace=0.3, wspace=0.35)
 
-        plt.savefig(os.path.join(args.dir, 'fig_{}.png'.format(env_id+ '-success_rate')))
+        plt.savefig(env_id)
 
         #plt.figure(1)
         

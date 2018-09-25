@@ -273,6 +273,13 @@ class DDPG(object):
 
         return transitions_batch
 
+    def sample_demo_state(self):
+        global demoBuffer
+        if demoBuffer.get_current_size() > 0:
+            transitionsDemo = demoBuffer.sample(1)
+            return transitionsDemo
+        else: return None
+
     def stage_batch(self, batch=None):
         if batch is None:
             batch = self.sample_batch()
