@@ -1,7 +1,7 @@
 import threading
 
 import numpy as np
-
+import random
 
 class ReplayBuffer:
     def __init__(self, buffer_shapes, size_in_transitions, T, sample_transitions):
@@ -54,6 +54,19 @@ class ReplayBuffer:
 
         return transitions
 
+    def sample_demo_resets(self):
+        """Returns a dict {key: array(batch_size x shapes[key])}
+        """
+
+        chosen_episode = random.randint(0, (self.get_current_size()/self.T) - 1)
+        chosen_transition = random.randint(0, self.T - 2 )
+
+        reset_state = self.buffers['ag'][chosen_episode][chosen_transition]
+        reset_goal = self.buffers['g'][chosen_episode][chosen_transition]
+        
+
+        return [reset_state, reset_goal]
+
     def store_episode(self, episode_batch):
         """episode_batch: array(batch_size x (T or T+1) x dim_key)
         """
@@ -63,7 +76,6 @@ class ReplayBuffer:
 
         with self.lock:
             idxs = self._get_storage_idx(batch_size)
-
             # load inputs into buffers
             for key in self.buffers.keys():
                 self.buffers[key][idxs] = episode_batch[key]

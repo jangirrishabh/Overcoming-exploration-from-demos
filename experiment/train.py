@@ -13,7 +13,7 @@ from baselines import logger
 from baselines.common import set_global_seeds
 from baselines.common.mpi_moments import mpi_moments
 import config
-from rollout import RolloutWorker, RolloutWorkerOriginal
+from rollout import RolloutWorker, RolloutWorkerOriginal#, RolloutWorkerSofa
 from util import mpi_fork
 
 from subprocess import CalledProcessError
@@ -45,10 +45,10 @@ def train(policy, rollout_worker, evaluator,
         # train
         rollout_worker.clear_history()
         for _ in range(n_cycles):
-            if (np.random.normal(0, 1, 1) > 0):
-                episode = rollout_worker.generate_rollouts_from_demo()
-            else:
-                episode = rollout_worker.generate_rollouts()
+            
+            episode = rollout_worker.generate_rollouts_from_demo() # uncomment to train with resets
+            
+            #episode = rollout_worker.generate_rollouts() # uncomment to train without resets
             policy.store_episode(episode)
             for _ in range(n_batches):
                 policy.train()
@@ -219,6 +219,12 @@ def launch(
         evaluator = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **eval_params)
         evaluator.seed(rank_seed)
 
+        # rollout_worker = RolloutWorkerSofa(params['make_env'], policy, dims, logger, **rollout_params)
+        # rollout_worker.seed(rank_seed)
+
+        # evaluator = RolloutWorkerSofa(params['make_env'], policy, dims, logger, **eval_params)
+        # evaluator.seed(rank_seed)
+
     train(
         logdir=logdir, policy=policy, rollout_worker=rollout_worker,
         evaluator=evaluator, n_epochs=n_epochs, n_test_rollouts=params['n_test_rollouts'],
@@ -231,14 +237,14 @@ def launch(
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
 @click.option('--env', type=str, default='FetchStackThree-v0', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--logdir', type=str, default='/home/rjangir/results/data_fetch_stack_three_resets', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
-@click.option('--n_epochs', type=int, default=20000, help='the number of training epochs to run')
+@click.option('--logdir', type=str, default='/home/rjangir/results/data_fetch_stack_three_relative_obs', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
+@click.option('--n_epochs', type=int, default=10000, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
 @click.option('--seed', type=int, default=0, help='the random seed used to seed both the environment and the training code')
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--demo_file', type=str, default = '/home/rjangir/fetchDemoData/data_fetch_stack_three_100.npz', help='demo data file path')
+@click.option('--demo_file', type=str, default = '/home/rjangir/fetchDemoData/data_fetch_stack_three_relative_obs_100.npz', help='demo data file path')
 def main(**kwargs):
     launch(**kwargs)
 

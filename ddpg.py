@@ -276,8 +276,8 @@ class DDPG(object):
     def sample_demo_state(self):
         global demoBuffer
         if demoBuffer.get_current_size() > 0:
-            transitionsDemo = demoBuffer.sample(1)
-            return transitionsDemo
+            [reset_state, reset_goal] = demoBuffer.sample_demo_resets()
+            return [reset_state, reset_goal]
         else: return None
 
     def stage_batch(self, batch=None):
@@ -333,7 +333,7 @@ class DDPG(object):
         batch_tf = OrderedDict([(key, batch[i]) for i, key in enumerate(self.stage_shapes.keys())])
         batch_tf['r'] = tf.reshape(batch_tf['r'], [-1, 1])
 
-        mask = np.concatenate((np.zeros(self.batch_size - self.demo_batch_size), np.ones(self.demo_batch_size)), axis = 0)
+        mask = np.concatenate((np.zeros(self.batch_size - self.demo_batch_size, dtype=bool), np.ones(self.demo_batch_size, dtype=bool)), axis = 0)
 
         # networks
         with tf.variable_scope('main') as vs:
@@ -361,7 +361,7 @@ class DDPG(object):
 
         if self.bc_loss ==1 and self.q_filter == 1 :
             maskMain = tf.reshape(tf.boolean_mask(self.main.Q_tf > self.main.Q_pi_tf, mask), [-1]) #where is the demonstrator action better than actor action according to the critic?
-            self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask(tf.boolean_mask((self.main.pi_tf), mask), maskMain, axis=0) - tf.boolean_mask(tf.boolean_mask((batch_tf['u']), mask), maskMain, axis=0)))
+            self.cloning_loss_tf = tf.reduce_sum(tf.square(tf.boolean_mask(tf.boolean_mask((self.main.pi_tf), mask), maskMain) - tf.boolean_mask(tf.boolean_mask((batch_tf['u']), mask), maskMain)))
             self.pi_loss_tf = -self.lambda1 * tf.reduce_mean(self.main.Q_pi_tf)
             self.pi_loss_tf += self.lambda1 * self.action_l2 * tf.reduce_mean(tf.square(self.main.pi_tf / self.max_u))
             self.pi_loss_tf += self.lambda2 * self.cloning_loss_tf
