@@ -59,7 +59,7 @@ class ReplayBuffer:
         """
 
         chosen_episode = random.randint(0, (self.get_current_size()/self.T) - 1)
-        chosen_transition = random.randint(0, self.T - 2 )
+        chosen_transition = random.randint(0, self.T - 20 )
 
         reset_state = self.buffers['ag'][chosen_episode][chosen_transition]
         reset_goal = self.buffers['g'][chosen_episode][chosen_transition]

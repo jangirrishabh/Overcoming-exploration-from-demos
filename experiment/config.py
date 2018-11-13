@@ -25,7 +25,7 @@ DEFAULT_PARAMS = {
     # env
     'max_u': 1.,  # max absolute value of actions on different coordinates
     # ddpg
-    'layers': 5,  # number of layers in the critic/actor networks
+    'layers': 4,  # number of layers in the critic/actor networks
     'hidden': 256,  # number of neurons in each hidden layers
     'network_class': 'baselines.her.actor_critic:ActorCritic',
     'Q_lr': 0.001,  # critic learning rate
@@ -54,7 +54,7 @@ DEFAULT_PARAMS = {
     'norm_clip': 5,  # normalized observations are cropped to these values
     'bc_loss': 1, # whether or not to use the behavior cloning loss as an auxilliary loss
     'q_filter': 1, # whether or not a Q value filter should be used on the Actor outputs
-    'num_demo': 50 # number of expert demo episodes
+    'num_demo': 60 # number of expert demo episodes
 }
 
 
