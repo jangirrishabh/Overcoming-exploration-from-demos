@@ -26,6 +26,46 @@ def mpi_average(value):
         value = [value]
     return mpi_moments(np.array(value))[0]
 
+class Service:
+    def __init__(self, *args):
+        self._args = args
+        self._service_name = os.path.splitext(os.path.basename(args[0]))[0]
+        self._request_file_name = self._service_name + "_request"
+        self._response_file_name = self._service_name + "_response"
+        self._request_file = None
+        self._response_file = None
+
+    def __call__(self, action):
+        json.dump(action, self._request_file)
+        self._request_file.write("\n")
+        self._request_file.flush()
+        return json.loads(self._response_file.readline())
+        #return 0
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end()
+
+    def start(self):
+        if not os.path.exists(self._request_file_name):
+            os.mkfifo(self._request_file_name)
+        if not os.path.exists(self._response_file_name):
+            os.mkfifo(self._response_file_name)
+        self._request_file = open(self._request_file_name, "w")
+        self._response_file = open(self._response_file_name, "r")
+
+    def end(self):
+        if self._request_file is not None:
+            self._request_file.close()
+        if self._response_file is not None:
+            self._response_file.close()
+        if os.path.exists(self._request_file_name):
+            os.remove(self._request_file_name)
+        if os.path.exists(self._response_file_name):
+            os.remove(self._response_file_name)
 
 def train(policy, rollout_worker, evaluator,
           n_epochs, n_test_rollouts, n_cycles, n_batches, policy_save_interval,
@@ -157,73 +197,38 @@ def launch(
     dims = config.configure_dims(params)
     policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return)
 
-    if params['env_name'] == 'GazeboWAMemptyEnv-v1':
-        rollout_params = {
-            'exploit': False,
-            'use_target_net': False,
-            'use_demo_states': True,
-            'compute_Q': False,
-            'T': params['T'],
-            #'render': 1,
-        }
+    
+    rollout_params = {
+        'exploit': False,
+        'use_target_net': False,
+        'use_demo_states': True,
+        'compute_Q': False,
+        'T': params['T'],
+        'render': 0,
+    }
 
-        eval_params = {
-            'exploit': True,
-            'use_target_net': params['test_with_polyak'],
-            #'use_demo_states': False,
-            'compute_Q': True,
-            'T': params['T'],
-            'rollout_batch_size': 1,
-            #'render': 1,
-        }
+    eval_params = {
+        'exploit': True,
+        'use_target_net': params['test_with_polyak'],
+        #'use_demo_states': False,
+        'compute_Q': True,
+        'T': params['T'],
+        'render': 0,
+    }
 
-        for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
-            rollout_params[name] = params[name]
-            eval_params[name] = params[name]
+    for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
+        rollout_params[name] = params[name]
+        eval_params[name] = params[name]
 
+    rollout_worker_service = Service("action_reaction")
+    evaluator_service = Service("action_reaction_evaluator")
 
+    rollout_worker = RolloutWorkerSofa(rollout_worker_service, policy, dims, logger, **rollout_params)
+    #rollout_worker.seed(rank_seed)
 
-        madeEnv = config.cached_make_env(params['make_env'])
-        rollout_worker = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **rollout_params)
-        rollout_worker.seed(rank_seed)
+    evaluator = RolloutWorkerSofa(evaluator_service, policy, dims, logger, **eval_params)
+    #evaluator.seed(rank_seed)
 
-        evaluator = RolloutWorker(madeEnv, params['make_env'], policy, dims, logger, **eval_params)
-        evaluator.seed(rank_seed)
-    else:
-        rollout_params = {
-            'exploit': False,
-            'use_target_net': False,
-            'use_demo_states': True,
-            'compute_Q': False,
-            'T': params['T'],
-            'render': 0,
-        }
-
-        eval_params = {
-            'exploit': True,
-            'use_target_net': params['test_with_polyak'],
-            #'use_demo_states': False,
-            'compute_Q': True,
-            'T': params['T'],
-            'render': 0,
-        }
-
-        for name in ['T', 'rollout_batch_size', 'gamma', 'noise_eps', 'random_eps']:
-            rollout_params[name] = params[name]
-            eval_params[name] = params[name]
-
-
-        rollout_worker = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **rollout_params)
-        rollout_worker.seed(rank_seed)
-
-        evaluator = RolloutWorkerOriginal(params['make_env'], policy, dims, logger, **eval_params)
-        evaluator.seed(rank_seed)
-
-        # rollout_worker = RolloutWorkerSofa(params['make_env'], policy, dims, logger, **rollout_params)
-        # rollout_worker.seed(rank_seed)
-
-        # evaluator = RolloutWorkerSofa(params['make_env'], policy, dims, logger, **eval_params)
-        # evaluator.seed(rank_seed)
 
     train(
         logdir=logdir, policy=policy, rollout_worker=rollout_worker,
@@ -236,7 +241,7 @@ def launch(
 #@click.option('--env', type=str, default='FetchPickAndPlace-v0', help='the name of the OpenAI Gym environment that you want to train on')
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--env', type=str, default='FetchStackThree-v0', help='the name of the OpenAI Gym environment that you want to train on')
+@click.option('--env', type=str, default='SofaEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
 @click.option('--logdir', type=str, default='/home/rjangir/results/data_fetch_stack_three_minimum_obs_small_resets', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
 @click.option('--n_epochs', type=int, default=10000, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
