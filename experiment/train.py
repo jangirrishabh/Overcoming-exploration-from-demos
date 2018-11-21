@@ -9,11 +9,13 @@ import resource
 
 sys.path.append('/home/rjangir/software/workSpace/Overcoming-exploration-from-demos/')
 
+sofaEnv_path = '/home/rjangir/software/sofa/build/v17.12/bin/'
+
 from baselines import logger
 from baselines.common import set_global_seeds
 from baselines.common.mpi_moments import mpi_moments
 import config
-from rollout import RolloutWorker, RolloutWorkerOriginal#, RolloutWorkerSofa
+from rollout import RolloutWorker, RolloutWorkerOriginal, RolloutWorkerSofa
 from util import mpi_fork
 
 from subprocess import CalledProcessError
@@ -26,10 +28,12 @@ def mpi_average(value):
         value = [value]
     return mpi_moments(np.array(value))[0]
 
+
+
 class Service:
     def __init__(self, *args):
         self._args = args
-        self._service_name = os.path.splitext(os.path.basename(args[0]))[0]
+        self._service_name = sofaEnv_path + os.path.splitext(os.path.basename(args[0]))[0]
         self._request_file_name = self._service_name + "_request"
         self._response_file_name = self._service_name + "_response"
         self._request_file = None
@@ -86,9 +90,9 @@ def train(policy, rollout_worker, evaluator,
         rollout_worker.clear_history()
         for _ in range(n_cycles):
             
-            episode = rollout_worker.generate_rollouts_from_demo() # uncomment to train with resets
+            #episode = rollout_worker.generate_rollouts_from_demo() # uncomment to train with resets
             
-            #episode = rollout_worker.generate_rollouts() # uncomment to train without resets
+            episode = rollout_worker.generate_rollouts() # uncomment to train without resets
             policy.store_episode(episode)
             for _ in range(n_batches):
                 policy.train()
@@ -117,6 +121,7 @@ def train(policy, rollout_worker, evaluator,
 
         # save the policy if it's better than the previous ones
         success_rate = mpi_average(evaluator.current_success_rate())
+        #print ("TRAINIGN SUCCESS RATES ", evaluator.current_success_rate(), success_rate)
         if rank == 0 and success_rate >= best_success_rate and save_policies:
             best_success_rate = success_rate
             best_success_epoch = epoch
@@ -171,6 +176,8 @@ def launch(
     resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
     # Prepare params.
+    
+
     params = config.DEFAULT_PARAMS
     params['env_name'] = env
     params['replay_strategy'] = replay_strategy
@@ -194,7 +201,15 @@ def launch(
         logger.warn('****************')
         logger.warn()
 
-    dims = config.configure_dims(params)
+
+
+    rollout_worker_service = Service("action_reaction")
+    evaluator_service = Service("action_reaction_evaluator")
+
+    rollout_worker_service.start()
+    evaluator_service.start()
+
+    dims = config.configure_dims(params, rollout_worker_service)
     policy = config.configure_ddpg(dims=dims, params=params, clip_return=clip_return)
 
     
@@ -220,8 +235,7 @@ def launch(
         rollout_params[name] = params[name]
         eval_params[name] = params[name]
 
-    rollout_worker_service = Service("action_reaction")
-    evaluator_service = Service("action_reaction_evaluator")
+    
 
     rollout_worker = RolloutWorkerSofa(rollout_worker_service, policy, dims, logger, **rollout_params)
     #rollout_worker.seed(rank_seed)
@@ -242,14 +256,14 @@ def launch(
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
 @click.option('--env', type=str, default='SofaEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--logdir', type=str, default='/home/rjangir/results/data_fetch_stack_three_minimum_obs_small_resets', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
+@click.option('--logdir', type=str, default='/home/rjangir/results/sofa/data_sofa_vertex_to_point', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
 @click.option('--n_epochs', type=int, default=10000, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
 @click.option('--seed', type=int, default=0, help='the random seed used to seed both the environment and the training code')
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--demo_file', type=str, default = '/home/rjangir/fetchDemoData/data_fetch_stack_three_minimum_obs_small_100.npz', help='demo data file path')
+@click.option('--demo_file', type=str, default = '/home/rjangir/sofaDemoData/data_sofa_vertex_to_point_20.npz', help='demo data file path')
 def main(**kwargs):
     launch(**kwargs)
 

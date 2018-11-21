@@ -543,11 +543,11 @@ class RolloutWorkerSofa:
         and `g` arrays accordingly.
         """
         #obs = self.envs[i].reset()
-        action = [0, 0, 0, 0, 1] #for reset 
+        action = [random.uniform(-0.00001, 0.00001), random.uniform(-0.00001, 0.00001), random.uniform(-0.00001, 0.00001), random.uniform(-1.0, -0.9), 1]
         obs = self.service(action)
-        self.initial_o[i] = obs['observation']
-        self.initial_ag[i] = obs['achieved_goal']
-        self.g[i] = obs['desired_goal']
+        self.initial_o[i] = np.asarray(obs['observation'])
+        self.initial_ag[i] = np.asarray(obs['achieved_goal'])
+        self.g[i] = np.asarray(obs['desired_goal'])
 
     def reset_all_rollouts(self):
         """Resets all `rollout_batch_size` rollout workers.
@@ -711,8 +711,10 @@ class RolloutWorkerSofa:
                     # We fully ignore the reward here because it will have to be re-computed
                     # for HER.
                     #curr_o_new, _, _, info = self.envs[i].step(u[i])
-                    response = self.service(u[i])
-                    curr_o_new = response
+                    action = u[i].tolist()
+                    action.append(-1)
+                    response = self.service(action)
+                    curr_o_new = response.copy()
                     del curr_o_new['is_success']
                     del curr_o_new['reward']
                     del curr_o_new['done']
@@ -721,8 +723,8 @@ class RolloutWorkerSofa:
 
                     if 'is_success' in info:
                         success[i] = info['is_success']
-                    o_new[i] = curr_o_new['observation']
-                    ag_new[i] = curr_o_new['achieved_goal']
+                    o_new[i] = np.asarray(curr_o_new['observation'])
+                    ag_new[i] = np.asarray(curr_o_new['achieved_goal'])
                     for idx, key in enumerate(self.info_keys):
                         info_values[idx][t, i] = info[key]
                     # if self.render:
@@ -754,9 +756,11 @@ class RolloutWorkerSofa:
             episode['info_{}'.format(key)] = value
 
         # stats
+        #print ("Successes XX ", successes)
         successful = np.array(successes)[-1, :]
         assert successful.shape == (self.rollout_batch_size,)
         success_rate = np.mean(successful)
+        #print ("Success rate for this epoch ", success_rate, successful)
         self.success_history.append(success_rate)
         if self.compute_Q:
             self.Q_history.append(np.mean(Qs))

@@ -152,7 +152,7 @@ class DDPG(object):
 
     def initDemoBuffer(self, demoDataFile, update_stats=True):
 
-        demoData = np.load(demoDataFile)
+        demoData = np.load(demoDataFile, encoding="latin1")
         info_keys = [key.replace('info_', '') for key in self.input_dims.keys() if key.startswith('info_')]
         info_values = [np.empty((self.T, self.rollout_batch_size, self.input_dims['info_' + key]), np.float32) for key in info_keys]
 

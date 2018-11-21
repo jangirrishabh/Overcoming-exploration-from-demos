@@ -25,7 +25,7 @@ DEFAULT_PARAMS = {
     # env
     'max_u': 1.,  # max absolute value of actions on different coordinates
     # ddpg
-    'layers': 5,  # number of layers in the critic/actor networks
+    'layers': 3,  # number of layers in the critic/actor networks
     'hidden': 256,  # number of neurons in each hidden layers
     'network_class': 'baselines.her.actor_critic:ActorCritic',
     'Q_lr': 0.001,  # critic learning rate
@@ -44,8 +44,8 @@ DEFAULT_PARAMS = {
     'n_test_rollouts': 10,  # number of test rollouts per epoch, each consists of rollout_batch_size rollouts
     'test_with_polyak': False,  # run test episodes with the target network
     # exploration
-    'random_eps': 0.1,  # percentage of time a random action is taken
-    'noise_eps': 0.1,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
+    'random_eps': 0.3,  # percentage of time a random action is taken
+    'noise_eps': 0.2,  # std of gaussian noise added to not-completely-random actions as a percentage of max_u
     # HER
     'replay_strategy': 'future',  # supported modes: future, none
     'replay_k': 4,  # number of additional goals used for replay, only used if off_policy_data=future
@@ -54,7 +54,7 @@ DEFAULT_PARAMS = {
     'norm_clip': 5,  # normalized observations are cropped to these values
     'bc_loss': 1, # whether or not to use the behavior cloning loss as an auxilliary loss
     'q_filter': 1, # whether or not a Q value filter should be used on the Actor outputs
-    'num_demo': 60 # number of expert demo episodes
+    'num_demo': 19 # number of expert demo episodes
 }
 
 
@@ -79,16 +79,17 @@ def prepare_params(kwargs):
 
     env_name = kwargs['env_name']
 
-    def make_env():
-        return gym.make(env_name)
-    kwargs['make_env'] = make_env
-    tmp_env = cached_make_env(kwargs['make_env'])
-    assert hasattr(tmp_env, '_max_episode_steps')
-    kwargs['T'] = tmp_env._max_episode_steps
-    tmp_env.reset()
+    # def make_env():
+    #     return gym.make(env_name)
+    # kwargs['make_env'] = make_env
+    # tmp_env = cached_make_env(kwargs['make_env'])
+    # assert hasattr(tmp_env, '_max_episode_steps')
+    #kwargs['T'] = tmp_env._max_episode_steps
+    kwargs['T'] = 150
+    #tmp_env.reset()
     kwargs['max_u'] = np.array(kwargs['max_u']) if isinstance(kwargs['max_u'], list) else kwargs['max_u']
     #kwargs['gamma'] = 1. - 1. / kwargs['T']
-    kwargs['gamma'] = 0.98
+    kwargs['gamma'] = 0.99
     if 'lr' in kwargs:
         kwargs['pi_lr'] = kwargs['lr']
         kwargs['Q_lr'] = kwargs['lr']
@@ -111,14 +112,20 @@ def log_params(params, logger=logger):
     for key in sorted(params.keys()):
         logger.info('{}: {}'.format(key, params[key]))
 
+def goal_distance(goal_a, goal_b): #check how far is the current state from goal
+    assert goal_a.shape == goal_b.shape
+    return np.linalg.norm(goal_a - goal_b, axis=-1)
 
 def configure_her(params):
-    env = cached_make_env(params['make_env'])
-    env.reset()
+    # env = cached_make_env(params['make_env'])
+    # env.reset()
 
     def reward_fun(ag_2, g, info):  # vectorized
         #return env.compute_reward(achieved_goal=ag_2, desired_goal=g, info=info)
-        return env.compute_reward(achieved_goal=ag_2, desired_goal=g, info=info)
+        distance_threshold = 15.0
+        d = goal_distance(ag_2, g)
+        #print 'distance is ', d
+        return -(np.array(d > distance_threshold)).astype(np.float32)
 
     # Prepare configuration for HER.
     her_params = {
@@ -148,8 +155,8 @@ def configure_ddpg(dims, params, reuse=False, use_mpi=True, clip_return=True):
     input_dims = dims.copy()
 
     # DDPG agent
-    env = cached_make_env(params['make_env'])
-    env.reset()
+    # env = cached_make_env(params['make_env'])
+    # env.reset()
     ddpg_params.update({'input_dims': input_dims,  # agent takes an input observations
                         'T': params['T'],
                         'clip_pos_returns': True,  # clip positive returns
@@ -169,17 +176,22 @@ def configure_ddpg(dims, params, reuse=False, use_mpi=True, clip_return=True):
     return policy
 
 
-def configure_dims(params):
-    env = cached_make_env(params['make_env'])
-    env.reset()
-    obs, _, _, info = env.step(env.action_space.sample())
+def configure_dims(params, service):
+    # env = cached_make_env(params['make_env'])
+    # env.reset()
+    resetAction = [0, 0, 0, 0, 1]
 
+    obs = service(resetAction)
+
+    info = {'is_success' : obs['is_success']}
     dims = {
-        'o': obs['observation'].shape[0],
-        'u': env.action_space.shape[0],
-        'g': obs['desired_goal'].shape[0],
+        'o': np.asarray(obs['observation']).shape[0],
+        #'u': env.action_space.shape[0],
+        'u': len(resetAction) - 1,
+        'g': np.asarray(obs['desired_goal']).shape[0],
     }
 
+    print ('Dimensions found are ', dims)
     for key, value in info.items():
         value = np.array(value)
         if value.ndim == 0:

@@ -58,7 +58,7 @@ args = parser.parse_args()
 
 # Load all data.
 data = {}
-args.dir = '/home/rjangir/results/' #parsing arguments not working well
+args.dir = '/home/rjangir/results/sofa/' #parsing arguments not working well
 paths = [os.path.abspath(os.path.join(path, '..')) for path in glob2.glob(os.path.join(args.dir, '**', 'progress.csv'))]
 for curr_path in paths:
     if not os.path.isdir(curr_path):
