@@ -256,14 +256,14 @@ def launch(
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v2', help='the name of the OpenAI Gym environment that you want to train on')
 #@click.option('--env', type=str, default='GazeboWAMemptyEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
 @click.option('--env', type=str, default='SofaEnv-v1', help='the name of the OpenAI Gym environment that you want to train on')
-@click.option('--logdir', type=str, default='/home/rjangir/results/sofa/data_sofa_vertex_to_point', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
+@click.option('--logdir', type=str, default='/home/rjangir/results/sofa/data_sofa_vertex_to_vertex_40_min_dist_10_net4_slow_LR_no_L2', help='the path to where logs and policy pickles should go. If not specified, creates a folder in /tmp/')
 @click.option('--n_epochs', type=int, default=10000, help='the number of training epochs to run')
 @click.option('--num_cpu', type=int, default=1, help='the number of CPU cores to use (using MPI)')
 @click.option('--seed', type=int, default=0, help='the random seed used to seed both the environment and the training code')
 @click.option('--policy_save_interval', type=int, default=5, help='the interval with which policy pickles are saved. If set to 0, only the best and latest policy will be pickled.')
 @click.option('--replay_strategy', type=click.Choice(['future', 'none']), default='future', help='the HER replay strategy to be used. "future" uses HER, "none" disables HER.')
 @click.option('--clip_return', type=int, default=1, help='whether or not returns should be clipped')
-@click.option('--demo_file', type=str, default = '/home/rjangir/sofaDemoData/data_sofa_vertex_to_point_20.npz', help='demo data file path')
+@click.option('--demo_file', type=str, default = '/home/rjangir/sofaDemoData/data_sofa_vertex_to_vertex_40_min_dist_10_net4.npz', help='demo data file path')
 def main(**kwargs):
     launch(**kwargs)
 

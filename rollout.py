@@ -757,9 +757,12 @@ class RolloutWorkerSofa:
 
         # stats
         #print ("Successes XX ", successes)
-        successful = np.array(successes)[-1, :]
+        sum_list = [0]
+        sum_list += [i[0] for i in successes]
+        print ("sum of successes", np.sum(sum_list))
+        successful = np.array(successes)[-2, :]
         assert successful.shape == (self.rollout_batch_size,)
-        success_rate = np.mean(successful)
+        success_rate = np.mean(successful) #mean over the rollout batches
         #print ("Success rate for this epoch ", success_rate, successful)
         self.success_history.append(success_rate)
         if self.compute_Q:
@@ -775,7 +778,7 @@ class RolloutWorkerSofa:
         self.Q_history.clear()
 
     def current_success_rate(self):
-        return np.mean(self.success_history)
+        return np.mean(self.success_history) # mean over the rollouts
 
     def current_mean_Q(self):
         return np.mean(self.Q_history)
